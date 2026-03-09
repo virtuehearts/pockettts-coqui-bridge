@@ -85,7 +85,7 @@ async def clone_voice(
     normalize_to_wav(temp_source, sample_path)
     temp_source.unlink(missing_ok=True)
 
-    embedding_path = settings.embeddings_dir / f'{voice_id}.emb.txt'
+    embedding_path = settings.embeddings_dir / f'{voice_id}.safetensors'
     try:
         tts.clone_and_register_assets(sample_path, embedding_path)
     except RuntimeError as exc:

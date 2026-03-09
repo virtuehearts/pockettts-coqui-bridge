@@ -20,6 +20,7 @@ def health(request: Request):
         'pocket_tts_availability': avail['available'],
         'model_readiness': avail['model_ready'],
         'cloning_available': avail['cloning_available'],
+        'engine_error': avail.get('error'),
         'directory_checks': checks,
         'auth_enabled': settings.enable_auth,
     }
