@@ -57,14 +57,16 @@ If `HF_TOKEN` is blank, the app still works with built-in voices.
 python -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
+# real Pocket-TTS backend
+pip install pocket-tts torch
 cp .env.example .env
 uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
 ```
 
 ## Cloning behavior
 - Cloning endpoints require auth (unless `ENABLE_AUTH=false`).
-- Cloning requires `HF_TOKEN`; if missing, cloning returns a clear actionable error.
-- Built-in synthesis remains available without `HF_TOKEN`.
+- Cloning uses Pocket-TTS model state export (`.safetensors`) for re-use.
+- If `pocket-tts`/model assets are unavailable, synthesis falls back to a local tone generator and cloning returns an actionable error.
 
 ## API examples
 

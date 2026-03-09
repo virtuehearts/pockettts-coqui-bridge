@@ -61,14 +61,21 @@ async def tts(request: Request):
             voice_id = clone_name.lower().replace(' ', '-')
             sample_path = settings.voices_dir / f'{voice_id}.wav'
             sample_path.write_bytes(normalized.read_bytes())
-            emb_path = settings.embeddings_dir / f'{voice_id}.emb.txt'
+            emb_path = settings.embeddings_dir / f'{voice_id}.safetensors'
             tts_service.clone_and_register_assets(sample_path, emb_path)
             registry.create_cloned(voice_id, clone_name, str(sample_path), str(emb_path))
         normalized.unlink(missing_ok=True)
     else:
         if not registry.get(voice):
             raise HTTPException(status_code=404, detail='voice not found')
-        tts_service.synthesize_to_wav(text, voice, output_wav)
+        voice_info = registry.get(voice)
+        tts_service.synthesize_to_wav(
+            text,
+            voice,
+            output_wav,
+            voice_sample=voice_info.get('sample_path') if voice_info else None,
+            voice_embedding=voice_info.get('embedding_path') if voice_info else None,
+        )
 
     if fmt == 'mp3':
         mp3_path = settings.output_dir / output_wav.with_suffix('.mp3').name
@@ -91,7 +98,14 @@ async def preview(request: Request):
     if not text:
         raise HTTPException(status_code=400, detail='text is required')
     out = request.app.state.settings.output_dir / timestamped_output('preview', '.wav')
-    request.app.state.tts_service.synthesize_to_wav(text, voice, out)
+    voice_info = request.app.state.voice_registry.get(voice)
+    request.app.state.tts_service.synthesize_to_wav(
+        text,
+        voice,
+        out,
+        voice_sample=voice_info.get('sample_path') if voice_info else None,
+        voice_embedding=voice_info.get('embedding_path') if voice_info else None,
+    )
     return {'ok': True, 'audio_url': f'/generated/{out.name}'}
 
 
@@ -104,7 +118,14 @@ async def openai_speech(request: Request):
     if not text:
         raise HTTPException(status_code=400, detail='input is required')
     out = request.app.state.settings.output_dir / timestamped_output('openai', '.wav')
-    request.app.state.tts_service.synthesize_to_wav(text, voice, out)
+    voice_info = request.app.state.voice_registry.get(voice)
+    request.app.state.tts_service.synthesize_to_wav(
+        text,
+        voice,
+        out,
+        voice_sample=voice_info.get('sample_path') if voice_info else None,
+        voice_embedding=voice_info.get('embedding_path') if voice_info else None,
+    )
     if response_format == 'mp3':
         mp3 = out.with_suffix('.mp3')
         wav_to_mp3(out, mp3)

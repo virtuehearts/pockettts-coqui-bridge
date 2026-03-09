@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 import math
+import os
 import struct
+import threading
 import wave
 from pathlib import Path
 
@@ -12,31 +14,93 @@ class PocketTTSService:
     def __init__(self, settings: Settings):
         self.settings = settings
         self.backend_name = "pocket-tts"
+        self._lock = threading.Lock()
+        self._model = None
+        self._export_model_state = None
+        self._voice_state_cache: dict[str, object] = {}
+        self._init_error: str | None = None
 
     def availability(self) -> dict:
-        # In local/dev environments this stub remains available for built-in voices.
+        self._ensure_model_loaded()
         return {
             "engine": self.backend_name,
-            "available": True,
-            "model_ready": True,
-            "cloning_available": bool(self.settings.hf_token),
+            "available": self._model is not None,
+            "model_ready": self._model is not None,
+            "cloning_available": self._model is not None,
+            "error": self._init_error,
         }
 
     def ensure_cloning_available(self) -> None:
-        if not self.settings.hf_token:
-            raise RuntimeError("Cloning requires HF_TOKEN with model access. Set HF_TOKEN in .env")
+        self._ensure_model_loaded()
+        if self._model is None:
+            raise RuntimeError(
+                "Pocket-TTS model is unavailable. Install dependencies (`pip install pocket-tts torch`) and ensure model assets can be downloaded."
+            )
 
-    def synthesize_to_wav(self, text: str, voice: str, output_path: Path) -> Path:
-        # Placeholder local synthesis to keep endpoint behavior stable offline.
-        # Frequency shifts by voice for easy differentiation.
-        freq = 220 if voice == "alba" else 280 if voice == "sol" else 330
-        duration = max(0.35, min(4.0, len(text) * 0.03))
-        self._write_tone(output_path, freq=freq, duration_s=duration)
+    def synthesize_to_wav(
+        self,
+        text: str,
+        voice: str,
+        output_path: Path,
+        *,
+        voice_sample: str | None = None,
+        voice_embedding: str | None = None,
+    ) -> Path:
+        self._ensure_model_loaded()
+        if self._model is None:
+            freq = 220 if voice == "alba" else 280 if voice == "sol" else 330
+            duration = max(0.35, min(4.0, len(text) * 0.03))
+            self._write_tone(output_path, freq=freq, duration_s=duration)
+            return output_path
+
+        model = self._model
+        voice_prompt = voice_embedding or voice_sample or voice
+        cache_key = str(voice_prompt)
+
+        if cache_key not in self._voice_state_cache:
+            self._voice_state_cache[cache_key] = model.get_state_for_audio_prompt(voice_prompt)
+
+        audio = model.generate_audio(self._voice_state_cache[cache_key], text)
+        self._write_tensor_wav(output_path, audio, sample_rate=model.sample_rate)
         return output_path
 
     def clone_and_register_assets(self, sample_wav_path: Path, embedding_path: Path) -> None:
         self.ensure_cloning_available()
-        embedding_path.write_text(f"embedding-generated-from:{sample_wav_path.name}\n", encoding="utf-8")
+        model = self._model
+        state = model.get_state_for_audio_prompt(str(sample_wav_path))
+        embedding_path.parent.mkdir(parents=True, exist_ok=True)
+        self._export_model_state(state, str(embedding_path))
+        self._voice_state_cache[str(embedding_path)] = state
+
+    def _ensure_model_loaded(self) -> None:
+        if self._model is not None or self._init_error is not None:
+            return
+        with self._lock:
+            if self._model is not None or self._init_error is not None:
+                return
+            try:
+                os.environ.setdefault("HF_HOME", str(self.settings.hf_cache_dir))
+                os.environ.setdefault("HUGGINGFACE_HUB_CACHE", str(self.settings.hf_cache_dir))
+                from pocket_tts import TTSModel, export_model_state
+
+                self._model = TTSModel.load_model()
+                self._export_model_state = export_model_state
+            except Exception as exc:
+                self._init_error = str(exc)
+
+    @staticmethod
+    def _write_tensor_wav(path: Path, audio, sample_rate: int) -> None:
+        values = audio.detach().cpu().flatten().tolist()
+        path.parent.mkdir(parents=True, exist_ok=True)
+        with wave.open(str(path), "wb") as wav_file:
+            wav_file.setnchannels(1)
+            wav_file.setsampwidth(2)
+            wav_file.setframerate(sample_rate)
+            frames = bytearray()
+            for v in values:
+                clamped = max(-1.0, min(1.0, float(v)))
+                frames.extend(struct.pack("<h", int(clamped * 32767)))
+            wav_file.writeframes(bytes(frames))
 
     @staticmethod
     def _write_tone(path: Path, *, freq: float, duration_s: float, sample_rate: int = 22050) -> None:
