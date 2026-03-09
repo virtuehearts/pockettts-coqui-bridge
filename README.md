@@ -4,41 +4,11 @@ Production-oriented local FastAPI service that exposes **Coqui-compatible TTS en
 
 ## Features
 - Coqui-style API endpoint: `POST /api/tts` (JSON + multipart, alias support).
-- OpenAI-style endpoint: `POST /v1/audio/speech`.
 - Built-in + cloned voice registry with SQLite metadata.
 - Protected admin UI (`/`, `/voices`, `/voices/new`, `/settings`) with session login.
+- Changeable admin password from the Settings page (persisted in SQLite).
 - Public synth endpoints by default for Moltis compatibility.
-- Minimal environment config.
-
-## Project tree
-
-```text
-app/
-  main.py
-  config.py
-  db.py
-  models.py
-  api/
-    auth.py
-    health.py
-    tts.py
-    ui.py
-    voices.py
-  services/
-    auth.py
-    audio.py
-    pockettts.py
-    voice_registry.py
-  templates/
-  static/
-data/
-  voices/
-  embeddings/
-  output/
-  hf-cache/
-requirements.txt
-.env.example
-```
+- Docker support with persistent data volume.
 
 ## Minimal setup
 1. Copy `.env.example` to `.env`
@@ -63,10 +33,17 @@ cp .env.example .env
 uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
 ```
 
-## Cloning behavior
-- Cloning endpoints require auth (unless `ENABLE_AUTH=false`).
-- Cloning uses Pocket-TTS model state export (`.safetensors`) for re-use.
-- If `pocket-tts`/model assets are unavailable, synthesis falls back to a local tone generator and cloning returns an actionable error.
+## Docker
+
+```bash
+docker build -t pockettts-coqui-bridge .
+docker run --rm -p 8000:8000 \
+  -e APP_USERNAME=admin \
+  -e APP_PASSWORD=change_me \
+  -e SESSION_SECRET=replace_me \
+  -v $(pwd)/data:/app/data \
+  pockettts-coqui-bridge
+```
 
 ## API examples
 
@@ -88,14 +65,6 @@ curl -X POST http://localhost:8000/api/tts \
   -o response.wav
 ```
 
-### OpenAI-style speech
-```bash
-curl -X POST http://localhost:8000/v1/audio/speech \
-  -H 'Content-Type: application/json' \
-  -d '{"model":"pocket-tts","input":"Hello world","voice":"alba","response_format":"wav"}' \
-  -o speech.wav
-```
-
 ### Clone voice (protected)
 ```bash
 curl -X POST http://localhost:8000/api/voices/clone \
@@ -113,8 +82,3 @@ provider = "coqui"
 [voice.tts.coqui]
 endpoint = "http://localhost:8000"
 ```
-
-## Future Dockerization notes
-- Add `Dockerfile` with Python 3.11 slim + ffmpeg.
-- Mount `./data` as persistent volume.
-- Expose `8000` and pass `.env` values.

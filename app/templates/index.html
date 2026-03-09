@@ -1,15 +1,19 @@
 {% extends 'base.html' %}
 {% block content %}
-<h1>Synthesize</h1>
+<h1>Moltis / Coqui TTS</h1>
+<p>Use this page to test the same <code>/api/tts</code> endpoint Moltis calls.</p>
 <form id="ttsForm">
-  <textarea name="text" rows="6" cols="60" placeholder="Enter text"></textarea><br/>
-  <select name="voice">
+  <label>Text</label><br/>
+  <textarea name="text" rows="6" cols="60" placeholder="Enter text" required></textarea><br/>
+  <label>Voice</label>
+  <select name="speaker-id">
     {% for v in voices %}<option value="{{ v.id }}">{{ v.name }} ({{ v.type }})</option>{% endfor %}
   </select>
+  <label>Format</label>
   <select name="format"><option>wav</option><option>mp3</option></select>
   <button type="submit">Generate</button>
 </form>
-<audio id="player" controls></audio>
+<audio id="player" controls style="display:block; margin-top: 1rem;"></audio>
 <script>
 document.getElementById('ttsForm').onsubmit = async (e) => {
   e.preventDefault();

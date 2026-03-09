@@ -52,4 +52,4 @@ def settings_page(request: Request):
             'output': str(request.app.state.settings.output_dir),
         },
     }
-    return request.app.state.templates.TemplateResponse('settings.html', {'request': request, 'health': health_data})
+    return request.app.state.templates.TemplateResponse('settings.html', {'request': request, 'health': health_data, 'message': None, 'error': False})

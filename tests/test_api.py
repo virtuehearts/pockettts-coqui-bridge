@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from pathlib import Path
+
 import io
 import wave
 
@@ -10,6 +12,10 @@ from app.main import create_app
 
 def _client(enable_auth: str = "true", hf_token: str = "") -> TestClient:
     import os
+
+    db_path = Path("data/voices.db")
+    if db_path.exists():
+        db_path.unlink()
 
     os.environ["ENABLE_AUTH"] = enable_auth
     os.environ["APP_USERNAME"] = "admin"
@@ -59,3 +65,23 @@ def test_clone_requires_auth():
     data = {'name': 'my voice'}
     resp = client.post('/api/voices/clone', data=data, files=files)
     assert resp.status_code == 401
+
+
+def test_change_admin_password():
+    client = _client(enable_auth='true')
+    login = client.post('/login', data={'username': 'admin', 'password': 'pass'})
+    assert login.status_code in (200, 302)
+
+    update = client.post('/settings/password', data={
+        'current_password': 'pass',
+        'new_password': 'newpass123',
+        'confirm_password': 'newpass123',
+    })
+    assert update.status_code == 200
+
+    client.post('/logout')
+    bad_old = client.post('/login', data={'username': 'admin', 'password': 'pass'})
+    assert bad_old.status_code == 401
+
+    good_new = client.post('/login', data={'username': 'admin', 'password': 'newpass123'})
+    assert good_new.status_code in (200, 302)

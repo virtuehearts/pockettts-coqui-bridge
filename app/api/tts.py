@@ -107,27 +107,3 @@ async def preview(request: Request):
         voice_embedding=voice_info.get('embedding_path') if voice_info else None,
     )
     return {'ok': True, 'audio_url': f'/generated/{out.name}'}
-
-
-@router.post('/v1/audio/speech')
-async def openai_speech(request: Request):
-    payload = await request.json()
-    text = payload.get('input')
-    voice = payload.get('voice', request.app.state.settings.default_voice)
-    response_format = payload.get('response_format', 'wav').lower()
-    if not text:
-        raise HTTPException(status_code=400, detail='input is required')
-    out = request.app.state.settings.output_dir / timestamped_output('openai', '.wav')
-    voice_info = request.app.state.voice_registry.get(voice)
-    request.app.state.tts_service.synthesize_to_wav(
-        text,
-        voice,
-        out,
-        voice_sample=voice_info.get('sample_path') if voice_info else None,
-        voice_embedding=voice_info.get('embedding_path') if voice_info else None,
-    )
-    if response_format == 'mp3':
-        mp3 = out.with_suffix('.mp3')
-        wav_to_mp3(out, mp3)
-        return FileResponse(mp3, media_type='audio/mpeg', filename=mp3.name)
-    return FileResponse(out, media_type='audio/wav', filename=out.name)

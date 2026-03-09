@@ -38,7 +38,7 @@ def create_app() -> FastAPI:
     app.state.settings = settings
     app.state.voice_registry = VoiceRegistry(db_path)
     app.state.tts_service = PocketTTSService(settings)
-    app.state.auth_service = AuthService(settings)
+    app.state.auth_service = AuthService(settings, db_path)
     app.state.templates = Jinja2Templates(directory='app/templates')
 
     app.mount('/static', StaticFiles(directory='app/static'), name='static')

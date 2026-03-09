@@ -1,5 +1,14 @@
 {% extends 'base.html' %}
 {% block content %}
 <h1>Settings / Health</h1>
+{% if message %}<p style="color: {{ 'red' if error else 'green' }}">{{ message }}</p>{% endif %}
 <pre>{{ health }}</pre>
+
+<h2>Change Admin Password</h2>
+<form method="post" action="/settings/password">
+  <label>Current password <input type="password" name="current_password" required /></label><br/>
+  <label>New password <input type="password" name="new_password" minlength="8" required /></label><br/>
+  <label>Confirm new password <input type="password" name="confirm_password" minlength="8" required /></label><br/>
+  <button type="submit">Update password</button>
+</form>
 {% endblock %}
