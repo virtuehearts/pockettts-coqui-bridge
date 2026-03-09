@@ -1,0 +1,18 @@
+{% extends 'base.html' %}
+{% block content %}
+<h1>Cloned Voices</h1>
+<ul>
+{% for v in voices %}
+<li>{{ v.name }} ({{ v.id }})
+<form style="display:inline" onsubmit="return delVoice('{{ v.id }}')"><button>Delete</button></form>
+</li>
+{% endfor %}
+</ul>
+<script>
+async function delVoice(id){
+  const r=await fetch('/api/voices/'+id,{method:'DELETE'});
+  if(r.ok) location.reload(); else alert(await r.text());
+  return false;
+}
+</script>
+{% endblock %}

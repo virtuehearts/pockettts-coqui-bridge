@@ -1,0 +1,14 @@
+__pycache__/
+*.pyc
+.pytest_cache/
+.venv/
+.env
+data/output/*
+!data/output/.gitkeep
+data/voices/*
+!data/voices/.gitkeep
+data/embeddings/*
+!data/embeddings/.gitkeep
+data/hf-cache/*
+!data/hf-cache/.gitkeep
+data/*.db

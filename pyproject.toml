@@ -1,0 +1,12 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pockettts-coqui-bridge"
+version = "0.2.0"
+description = "PocketTTS Coqui-compatible FastAPI bridge with local admin UI"
+requires-python = ">=3.11"
+
+[tool.pytest.ini_options]
+pythonpath = [".", "src"]

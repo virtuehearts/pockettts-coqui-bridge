@@ -1,0 +1,23 @@
+{% extends 'base.html' %}
+{% block content %}
+<h1>Synthesize</h1>
+<form id="ttsForm">
+  <textarea name="text" rows="6" cols="60" placeholder="Enter text"></textarea><br/>
+  <select name="voice">
+    {% for v in voices %}<option value="{{ v.id }}">{{ v.name }} ({{ v.type }})</option>{% endfor %}
+  </select>
+  <select name="format"><option>wav</option><option>mp3</option></select>
+  <button type="submit">Generate</button>
+</form>
+<audio id="player" controls></audio>
+<script>
+document.getElementById('ttsForm').onsubmit = async (e) => {
+  e.preventDefault();
+  const fd = new FormData(e.target);
+  const res = await fetch('/api/tts', {method:'POST', body:fd});
+  if(!res.ok){ alert(await res.text()); return; }
+  const blob = await res.blob();
+  document.getElementById('player').src = URL.createObjectURL(blob);
+}
+</script>
+{% endblock %}
