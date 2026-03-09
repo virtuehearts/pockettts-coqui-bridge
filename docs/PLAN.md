@@ -1,108 +1,80 @@
-# PocketTTS Coqui Bridge – Implementation Status and 100% Completion Plan
+# PocketTTS Coqui Bridge – Current Status and Remaining Work
 
-This document maps the current repository state to the product goals and lists the remaining tasks to make the project fully production-ready and easy to test locally.
+This plan reflects the current repository state and highlights what is still required to reach a production-ready, fully tested bridge.
 
 ## Current implementation status
 
 ### Core architecture and local startup
-- ✅ FastAPI app factory exists and initializes all runtime directories at startup.
-- ✅ SQLite is initialized automatically (`data/voices.db`) with a `voices` table.
-- ✅ `.env.example` is minimal (`HF_TOKEN`, `APP_USERNAME`, `APP_PASSWORD`, `SESSION_SECRET`, optional `PORT`, `ENABLE_AUTH`).
-- ⚠️ Containerization scaffolding (`Dockerfile`, compose, healthcheck wiring) is not yet implemented.
+- ✅ FastAPI app initializes runtime directories at startup.
+- ✅ SQLite database (`data/voices.db`) is initialized automatically and stores voice metadata.
+- ✅ Environment-driven configuration exists with sane defaults (`HF_TOKEN`, `APP_USERNAME`, `APP_PASSWORD`, `SESSION_SECRET`, `ENABLE_AUTH`, `PORT`).
+- ✅ Dockerfile is present for containerized local runs with persisted `/app/data`.
 
-### Coqui/Moltis API compatibility
-- ✅ `POST /api/tts` exists and supports JSON and multipart forms with Coqui-like aliases (`speaker-id`, `speaker_id`, `speaker`, `voice`).
-- ✅ `POST /v1/audio/speech` exists for OpenAI-style compatibility.
-- ✅ `GET /health` and `GET /api/voices` exist.
-- ⚠️ Response and error schemas are practical but not yet validated against Moltis integration tests.
+### API compatibility and endpoints
+- ✅ `POST /api/tts` supports JSON and multipart form payloads.
+- ✅ Coqui-style voice aliases are supported (`speaker-id`, `speaker_id`, `speaker`, `voice`).
+- ✅ `POST /v1/audio/speech` OpenAI-style endpoint is available.
+- ✅ `GET /health` and `GET /api/voices` are implemented.
+- ⚠️ Contract/compatibility tests against a Moltis-like client matrix are still limited.
 
-### Voice support (built-in + cloned)
-- ✅ Built-in voices are available without `HF_TOKEN`.
-- ✅ Cloned voices are stored in SQLite and can be listed/updated/deleted.
-- ✅ Voice sample and embedding artifacts are persisted under `data/voices` and `data/embeddings`.
-- ⚠️ Pre-bundled custom voice import workflow (shipping ready-made local voices with package) is not implemented yet.
+### TTS engine and cloning
+- ✅ `PocketTTSService` attempts real `pocket-tts` model loading and synthesis when dependencies are available.
+- ✅ Cloning stores local sample + embedding/state artifacts under `data/voices` and `data/embeddings`.
+- ✅ Health reports backend availability and model initialization error details.
+- ⚠️ Service still includes tone-generation fallback when model init fails; this is useful for dev, but should be clearly framed as degraded mode.
+- ⚠️ Startup warm-up/preload for model and common voice state is not implemented.
 
-### Cloning workflow
-- ✅ Clone endpoint and UI flow exist (`/api/voices/clone`, `/voices/new`).
-- ⚠️ Cloning currently hard-requires `HF_TOKEN` in the service layer.
-- ⚠️ Current PocketTTS implementation is a placeholder/stub synthesizer (tone generator), not full Pocket-TTS inference for either synthesis or cloning.
+### Admin UI
+- ✅ Login flow and admin pages exist (`/`, `/voices`, `/voices/new`, `/settings`).
+- ✅ Voice deletion is available from the UI.
+- ✅ Settings page includes password update path.
+- ⚠️ Voice rename/edit controls are still missing in the UI (API supports update).
+- ⚠️ Voice preview controls and richer operator diagnostics are still missing.
 
-### Browser UI
-- ✅ Login page, synth form, voice selector, output format selector, create clone page, delete flow, settings page exist.
-- ⚠️ Rename voice UI is missing (API endpoint exists but no UI control).
-- ⚠️ Health/settings page is basic and not yet an operator-focused dashboard.
-- ⚠️ No automated browser/UI test harness exists yet.
+### Testing and quality
+- ✅ Basic API/CLI tests exist in `tests/`.
+- ⚠️ End-to-end cloned voice lifecycle tests are incomplete.
+- ⚠️ Browser/UI automation (Playwright) is not yet added to the repository test suite.
+- ⚠️ Explicit compatibility test matrix for multipart alias permutations and `/v1/audio/speech` contract behavior is still incomplete.
 
-## Direct answer to key questions
+## Estimated completion
+- **Estimated overall completion: ~78%**
 
-1. **Is there a local SQLite backend, with default startup behavior?**
-   - **Yes.** The app creates and uses `data/voices.db` at startup and creates the `voices` table automatically.
+Rationale:
+- API + persistence + auth/UI scaffold are largely in place.
+- Real backend integration path exists.
+- Remaining work is primarily around hardening, compatibility contract coverage, UX completeness, and end-to-end test automation.
 
-2. **Can custom voices be used later by API without HF token?**
-   - **Partially.**
-   - Existing cloned voices already stored locally can be used by the API without checking `HF_TOKEN` at synthesis time.
-   - Creating *new* cloned voices currently requires `HF_TOKEN`.
-   - A first-class “pre-made packaged voices” workflow (import/seed/migrate) is not yet implemented.
+## Remaining work to reach 100%
 
-3. **How much is implemented overall for your stated goal?**
-   - **Estimated overall completion: ~65%**
-   - Backend/API scaffold: high
-   - Auth/UI scaffold: medium
-   - True Pocket-TTS integration + offline/packaged custom-voice lifecycle + UI/compat testing: still pending
+### 1) Engine reliability and runtime behavior
+1. Add startup warm-up for model initialization and one default voice state load.
+2. Add clear degraded-mode indicator in UI and API docs when fallback synthesis is active.
+3. Define and test timeout/memory guardrails for long synthesis inputs.
 
-## Task list to reach 100% functionality
+### 2) Voice lifecycle completion
+1. Add rename/edit voice controls in `/voices` UI and wire to update endpoint.
+2. Add voice preview playback in voice management pages.
+3. Add optional “import local packaged voice assets” workflow with metadata manifest validation.
 
-### Phase 1 — Real engine integration (highest priority)
-1. Replace stub synthesis in `PocketTTSService` with real Pocket-TTS inference calls.
-2. Implement real voice cloning/embedding generation via Pocket-TTS-supported pipeline.
-3. Add deterministic model/cache initialization and startup warmup.
-4. Define fallback behavior when model assets are missing (clear health + actionable errors).
+### 3) Compatibility hardening
+1. Add table-driven contract tests for all Coqui alias permutations (JSON + multipart).
+2. Add stricter response/error schema consistency tests for `/api/tts` and `/v1/audio/speech`.
+3. Validate behavior against representative Moltis request patterns.
 
-### Phase 2 — HF-token-free packaged custom voices
-1. Add a `data/packaged_voices/` convention (sample + embedding + metadata manifest).
-2. Implement startup seeding: scan packaged voices and upsert them into SQLite.
-3. Add migration strategy for packaged voice updates (versioning/hash).
-4. Ensure API synthesis path for packaged/custom voices does **not** require `HF_TOKEN`.
-5. Add admin action: “import local voice assets” to register new pre-made voices.
+### 4) Test coverage and developer ergonomics
+1. Add integration tests with temporary DB/data directories for clone → list → synth → delete lifecycle.
+2. Add browser UI tests for login, synth submission, clone flow, delete flow, and settings update.
+3. Add make targets (or equivalent scripts) for `test`, `test-api`, and `test-ui`.
 
-### Phase 3 — Coqui/Moltis compatibility hardening
-1. Add contract tests for Moltis-compatible request variants.
-2. Normalize and document accepted field aliases and default behavior.
-3. Add stable error response shape and status code matrix.
-4. Add response-time and timeout defaults suitable for local model inference.
+### 5) Docs and operations
+1. Document fallback vs real-model behavior more explicitly in README.
+2. Document recommended production env vars and persistent volume strategy.
+3. Add troubleshooting section for model download/cache failures.
 
-### Phase 4 — UI completion
-1. Add rename voice form in `/voices` UI and wire to `PUT /api/voices/{id}`.
-2. Improve clone flow UX (upload validation, progress, clear failure messages).
-3. Add voice preview/play controls in voices management page.
-4. Expand settings page: runtime config, model status, storage usage, and API examples.
-5. Add CSRF-safe patterns or documented trusted-local deployment assumptions.
-
-### Phase 5 — Testability (API + UI)
-1. Keep current API unit tests and expand with:
-   - clone success/failure cases,
-   - delete/rename cases,
-   - OpenAI endpoint format checks,
-   - Moltis-compatible multipart permutations.
-2. Add integration tests with temporary SQLite DB and temporary data dirs.
-3. Add browser UI tests (Playwright) for:
-   - login/logout,
-   - synth playback flow,
-   - clone voice flow,
-   - rename/delete flows,
-   - settings visibility.
-4. Add `make test`, `make test-api`, and `make test-ui` developer commands.
-
-### Phase 6 — Local-to-container readiness
-1. Add `Dockerfile` (python:3.11-slim, optional ffmpeg).
-2. Add `docker-compose.yml` with mounted `./data` volume.
-3. Add startup command + healthcheck + persistent env handling.
-4. Verify first-run experience from clean checkout in container.
-
-## Definition of done (100%)
-- Real Pocket-TTS synthesis and cloning working locally.
-- Packaged custom voices can be shipped and used by API without HF token.
-- Moltis can point to endpoint and pass compatibility tests.
-- Admin UI supports full voice lifecycle (create/list/preview/rename/delete).
-- API + UI automated tests pass in CI.
-- Containerized local deployment works with minimal `.env`.
+## Definition of done
+- Real `pocket-tts` synthesis/cloning path works reliably in local and container runs.
+- Degraded fallback behavior is explicit, intentional, and observable.
+- Full voice lifecycle is available in the admin UI (create/list/preview/rename/delete).
+- API compatibility is proven by contract tests for Coqui/Moltis-style usage.
+- UI and API automated tests pass in CI.
