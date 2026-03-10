@@ -2,8 +2,8 @@
 {% block content %}
 <section>
   <hgroup>
-    <h2>Voice Management</h2>
-    <h3>Manage cloned voices, test them, and export as ZIP.</h3>
+    <h2 style="color: var(--primary);">Voice Management</h2>
+    <p>Clone new identities or manage your existing custom voices.</p>
   </hgroup>
 </section>
 
@@ -26,45 +26,70 @@
   <article>
     <header><strong>Existing Cloned Voices</strong></header>
     {% if not voices %}
-    <p>No cloned voices found. Use the form to clone your first voice.</p>
+    <div style="text-align: center; padding: 2rem; color: var(--muted-color);">
+        <p>No cloned voices found. Use the form to clone your first voice.</p>
+    </div>
     {% else %}
-    <table role="grid">
-      <thead>
-        <tr>
-          <th>Name</th>
-          <th>ID</th>
-          <th style="text-align: right;">Actions</th>
-        </tr>
-      </thead>
-      <tbody>
+    <div style="max-height: 500px; overflow-y: auto;">
         {% for v in voices %}
-        <tr>
-          <td><span id="name-{{ v.id }}">{{ v.name }}</span></td>
-          <td><code>{{ v.id }}</code></td>
-          <td style="text-align: right;">
-            <div style="display: flex; gap: 0.5rem; justify-content: flex-end;">
-              <button class="outline" onclick="playSample('{{ v.id }}')" title="Test / Play Sample">Play</button>
-              <button class="outline secondary" onclick="renameVoice('{{ v.id }}', '{{ v.name }}')" title="Rename">Rename</button>
-              <a href="/api/voices/{{ v.id }}/export" role="button" class="outline contrast" title="Export to ZIP">Export</a>
-              <button class="outline error" style="border-color: #d81b60; color: #d81b60;" onclick="deleteVoice('{{ v.id }}')" title="Delete">Del</button>
+        <div class="voice-card">
+            <div class="voice-info">
+                <div style="font-weight: 600;" id="name-{{ v.id }}">{{ v.name }}</div>
+                <div style="font-size: 0.75rem; color: var(--muted-color);">ID: <code>{{ v.id }}</code></div>
+
+                <form class="test-voice-form" onsubmit="testVoice(event, '{{ v.id }}')">
+                    <input type="text" placeholder="Test text..." required />
+                    <button type="submit" class="outline contrast" style="font-size: 0.75rem; padding: 0.25rem 0.5rem;">Test</button>
+                </form>
             </div>
-          </td>
-        </tr>
+            <div class="voice-actions">
+                <button class="outline secondary" onclick="renameVoice('{{ v.id }}', '{{ v.name }}')" title="Rename">Rename</button>
+                <a href="/api/voices/{{ v.id }}/export" role="button" class="outline contrast" title="Export to ZIP">Export</a>
+                <button class="outline" style="border-color: #ef4444; color: #ef4444;" onclick="deleteVoice('{{ v.id }}')" title="Delete">Del</button>
+            </div>
+        </div>
         {% endfor %}
-      </tbody>
-    </table>
+    </div>
     {% endif %}
   </article>
 </div>
 
-<!-- Audio player for samples -->
-<audio id="samplePlayer" style="display:none"></audio>
+<!-- Audio player for tests -->
+<audio id="globalPlayer" style="display:none"></audio>
 
 <script>
-async function playSample(id) {
-  const player = document.getElementById('samplePlayer');
-  player.src = `/api/voice-samples/${id}.wav?t=` + new Date().getTime();
-  player.play();
+async function testVoice(e, id) {
+  e.preventDefault();
+  const form = e.target;
+  const input = form.querySelector('input');
+  const btn = form.querySelector('button');
+  const text = input.value;
+
+  btn.setAttribute('aria-busy', 'true');
+  btn.disabled = true;
+
+  try {
+    const res = await fetch('/api/preview', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text, voice: id })
+    });
+
+    if (!res.ok) {
+      alert('Error: ' + await res.text());
+      return;
+    }
+
+    const data = await res.json();
+    const player = document.getElementById('globalPlayer');
+    player.src = data.audio_url + '?t=' + new Date().getTime();
+    player.play();
+  } catch (err) {
+    alert('Request failed: ' + err.message);
+  } finally {
+    btn.setAttribute('aria-busy', 'false');
+    btn.disabled = false;
+  }
 }
 
 async function renameVoice(id, currentName) {
@@ -97,10 +122,6 @@ async function deleteVoice(id) {
 </script>
 
 <style>
-  button.outline.error:hover {
-    background-color: #d81b60;
-    color: white;
-  }
   a[role="button"] {
     padding: 0.25rem 0.5rem;
     font-size: 0.8rem;

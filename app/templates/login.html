@@ -1,9 +1,21 @@
-<!doctype html><html><body>
-<h2>Login</h2>
-{% if error %}<p style="color:red">{{ error }}</p>{% endif %}
-<form method="post" action="/login">
-  <label>Username <input name="username" /></label><br/>
-  <label>Password <input type="password" name="password" /></label><br/>
-  <button type="submit">Login</button>
-</form>
-</body></html>
+{% extends 'base.html' %}
+{% block content %}
+<div style="max-width: 400px; margin: 100px auto;">
+  <article>
+    <header>
+        <h2 style="margin-bottom: 0; text-align: center; color: var(--primary);">Login</h2>
+        <p style="text-align: center; font-size: 0.9rem; color: var(--muted-color);">PocketTTS Coqui Bridge Admin</p>
+    </header>
+    {% if error %}<p style="color:#ef4444; font-size: 0.875rem; text-align: center;">{{ error }}</p>{% endif %}
+    <form method="post" action="/login">
+      <label for="username">Username
+        <input name="username" id="username" placeholder="admin" required />
+      </label>
+      <label for="password">Password
+        <input type="password" name="password" id="password" placeholder="••••••••" required />
+      </label>
+      <button type="submit" class="primary" style="width: 100%;">Login</button>
+    </form>
+  </article>
+</div>
+{% endblock %}
