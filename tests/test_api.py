@@ -67,6 +67,19 @@ def test_clone_requires_auth():
     assert resp.status_code == 401
 
 
+
+
+def test_clone_voice_falls_back_when_model_unavailable():
+    client = _client(enable_auth='false')
+    files = {'audio_file': ('sample.wav', _wav_bytes(), 'audio/wav')}
+    data = {'name': 'my custom voice'}
+    resp = client.post('/api/voices/clone', data=data, files=files)
+    assert resp.status_code == 200
+    payload = resp.json()
+    assert payload['id'] == 'my-custom-voice'
+    assert payload['sample_path'].endswith('my-custom-voice.wav')
+    assert payload['embedding_path'] is None
+
 def test_change_admin_password():
     client = _client(enable_auth='true')
     login = client.post('/login', data={'username': 'admin', 'password': 'pass'})

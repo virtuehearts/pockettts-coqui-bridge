@@ -86,17 +86,21 @@ async def clone_voice(
     temp_source.unlink(missing_ok=True)
 
     embedding_path = settings.embeddings_dir / f'{voice_id}.safetensors'
+    persisted_embedding: str | None = str(embedding_path)
     try:
         tts.clone_and_register_assets(sample_path, embedding_path)
     except RuntimeError as exc:
-        raise HTTPException(status_code=400, detail=str(exc)) from exc
+        if 'Pocket-TTS model is unavailable' in str(exc):
+            persisted_embedding = None
+        else:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
 
     metadata_json = json.loads(metadata) if metadata else {}
     created = registry.create_cloned(
         voice_id=voice_id,
         name=name,
         sample_path=str(sample_path),
-        embedding_path=str(embedding_path),
+        embedding_path=persisted_embedding,
         metadata=metadata_json,
     )
     return created
