@@ -1,27 +1,87 @@
 {% extends 'base.html' %}
 {% block content %}
-<h1>Moltis / Coqui TTS</h1>
-<p>Use this page to test the same <code>/api/tts</code> endpoint Moltis calls.</p>
-<form id="ttsForm">
-  <label>Text</label><br/>
-  <textarea name="text" rows="6" cols="60" placeholder="Enter text" required></textarea><br/>
-  <label>Voice</label>
-  <select name="speaker-id">
-    {% for v in voices %}<option value="{{ v.id }}">{{ v.name }} ({{ v.type }})</option>{% endfor %}
-  </select>
-  <label>Format</label>
-  <select name="format"><option>wav</option><option>mp3</option></select>
-  <button type="submit">Generate</button>
-</form>
-<audio id="player" controls style="display:block; margin-top: 1rem;"></audio>
+<section>
+  <hgroup>
+    <h2>TTS Synthesize</h2>
+    <h3>Test the TTS engine with various voices and formats.</h3>
+  </hgroup>
+</section>
+
+<article>
+  <form id="ttsForm">
+    <div class="grid">
+      <label for="speaker-id">Voice
+        <select id="speaker-id" name="speaker-id" required>
+          {% for v in voices %}
+          <option value="{{ v.id }}">{{ v.name }} ({{ v.type }})</option>
+          {% endfor %}
+        </select>
+      </label>
+
+      <label for="format">Output Format
+        <select id="format" name="format">
+          <option value="wav">WAV</option>
+          <option value="mp3">MP3</option>
+        </select>
+      </label>
+    </div>
+
+    <label for="text">Text to Speak
+      <textarea id="text" name="text" rows="5" placeholder="Enter text to synthesize..." required></textarea>
+    </label>
+
+    <button type="submit" id="generateBtn">Generate Audio</button>
+  </form>
+</article>
+
+<article id="resultSection" style="display:none">
+  <header><strong>Generated Audio</strong></header>
+  <div style="display: flex; flex-direction: column; align-items: center; gap: 1rem;">
+    <audio id="player" controls style="width: 100%;"></audio>
+    <a id="downloadLink" href="#" role="button" class="secondary" download="synthesized_audio">Download File</a>
+  </div>
+</article>
+
 <script>
 document.getElementById('ttsForm').onsubmit = async (e) => {
   e.preventDefault();
-  const fd = new FormData(e.target);
-  const res = await fetch('/api/tts', {method:'POST', body:fd});
-  if(!res.ok){ alert(await res.text()); return; }
-  const blob = await res.blob();
-  document.getElementById('player').src = URL.createObjectURL(blob);
+  const btn = document.getElementById('generateBtn');
+  const resultSection = document.getElementById('resultSection');
+  const player = document.getElementById('player');
+  const downloadLink = document.getElementById('downloadLink');
+
+  btn.setAttribute('aria-busy', 'true');
+  btn.disabled = true;
+
+  try {
+    const fd = new FormData(e.target);
+    const res = await fetch('/api/tts', { method: 'POST', body: fd });
+
+    if (!res.ok) {
+      alert('Error: ' + await res.text());
+      return;
+    }
+
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+
+    player.src = url;
+    downloadLink.href = url;
+
+    const format = fd.get('format');
+    downloadLink.download = `synthesized_${new Date().getTime()}.${format}`;
+
+    resultSection.style.display = 'block';
+    player.play();
+
+    // Smooth scroll to result
+    resultSection.scrollIntoView({ behavior: 'smooth' });
+  } catch (err) {
+    alert('Request failed: ' + err.message);
+  } finally {
+    btn.setAttribute('aria-busy', 'false');
+    btn.disabled = false;
+  }
 }
 </script>
 {% endblock %}

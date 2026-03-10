@@ -136,3 +136,44 @@ def test_v1_audio_speech_unknown_voice():
     resp = client.post('/v1/audio/speech', json={'input': 'hello', 'voice': 'unknown-voice'})
     assert resp.status_code == 404
     assert resp.json()['detail'] == 'voice not found'
+
+
+def test_voice_export():
+    client = _client(enable_auth='false')
+    # First, clone a voice to have something to export
+    files = {'audio_file': ('sample.wav', _wav_bytes(), 'audio/wav')}
+    data = {'name': 'export-test'}
+    client.post('/api/voices/clone', data=data, files=files)
+
+    # Now export it
+    resp = client.get('/api/voices/export-test/export')
+    assert resp.status_code == 200
+    assert resp.headers['content-type'] == 'application/zip'
+
+    import zipfile
+    with zipfile.ZipFile(io.BytesIO(resp.content)) as z:
+        assert 'metadata.json' in z.namelist()
+        assert 'export-test.wav' in z.namelist()
+
+        import json
+        metadata = json.loads(z.read('metadata.json'))
+        assert metadata['id'] == 'export-test'
+
+
+def test_voice_rename():
+    client = _client(enable_auth='false')
+    # First, clone a voice
+    files = {'audio_file': ('sample.wav', _wav_bytes(), 'audio/wav')}
+    data = {'name': 'rename-test'}
+    client.post('/api/voices/clone', data=data, files=files)
+
+    # Now rename it
+    resp = client.put('/api/voices/rename-test', json={'name': 'new-name'})
+    assert resp.status_code == 200
+    payload = resp.json()
+    assert payload['name'] == 'new-name'
+    assert payload['id'] == 'rename-test' # ID stays the same
+
+    # Verify via list
+    resp = client.get('/api/voices')
+    assert any(v['name'] == 'new-name' for v in resp.json()['voices'])

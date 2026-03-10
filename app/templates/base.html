@@ -1,20 +1,67 @@
 <!doctype html>
-<html>
+<html lang="en">
 <head>
   <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>PocketTTS Coqui Bridge</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@1/css/pico.min.css" />
   <link rel="stylesheet" href="/static/styles.css" />
+  <style>
+    :root {
+      --spacing: 1rem;
+    }
+    nav {
+      padding: 1rem 0;
+      border-bottom: 1px solid var(--muted-border-color);
+      margin-bottom: 2rem;
+    }
+    nav ul {
+      display: flex;
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      align-items: center;
+    }
+    nav ul li {
+      margin-right: 1.5rem;
+    }
+    nav ul li:last-child {
+      margin-right: 0;
+      margin-left: auto;
+    }
+    .container-fluid {
+      padding: 0 2rem;
+    }
+    footer {
+      margin-top: 3rem;
+      padding: 2rem 0;
+      border-top: 1px solid var(--muted-border-color);
+      font-size: 0.8rem;
+      text-align: center;
+    }
+  </style>
 </head>
 <body>
-<nav>
-  <a href="/">Synthesize</a>
-  <a href="/voices">Voices</a>
-  <a href="/voices/new">Clone</a>
-  <a href="/settings">Settings</a>
-  <form action="/logout" method="post" style="display:inline"><button>Logout</button></form>
-</nav>
-<main>
-{% block content %}{% endblock %}
-</main>
+  <div class="container-fluid">
+    <nav>
+      <ul>
+        <li><strong>PocketTTS Bridge</strong></li>
+        <li><a href="/" class="secondary">Synthesize</a></li>
+        <li><a href="/voices" class="secondary">Voices</a></li>
+        <li><a href="/settings" class="secondary">Settings</a></li>
+        <li>
+          <form action="/logout" method="post" style="margin:0">
+            <button type="submit" class="outline contrast" style="padding: 0.25rem 0.75rem; margin: 0; font-size: 0.8rem;">Logout</button>
+          </form>
+        </li>
+      </ul>
+    </nav>
+    <main>
+      {% block content %}{% endblock %}
+    </main>
+    <footer>
+      <p>Powered by PocketTTS & Coqui</p>
+    </footer>
+  </div>
 </body>
 </html>

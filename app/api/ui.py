@@ -30,14 +30,6 @@ def voices_page(request: Request):
     return request.app.state.templates.TemplateResponse('voices.html', {'request': request, 'voices': voices})
 
 
-@router.get('/voices/new')
-def voices_new_page(request: Request):
-    guard = _guard(request)
-    if guard:
-        return guard
-    return request.app.state.templates.TemplateResponse('voices_new.html', {'request': request})
-
-
 @router.get('/settings')
 def settings_page(request: Request):
     guard = _guard(request)

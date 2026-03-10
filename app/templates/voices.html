@@ -1,18 +1,114 @@
 {% extends 'base.html' %}
 {% block content %}
-<h1>Cloned Voices</h1>
-<ul>
-{% for v in voices %}
-<li>{{ v.name }} ({{ v.id }})
-<form style="display:inline" onsubmit="return delVoice('{{ v.id }}')"><button>Delete</button></form>
-</li>
-{% endfor %}
-</ul>
+<section>
+  <hgroup>
+    <h2>Voice Management</h2>
+    <h3>Manage cloned voices, test them, and export as ZIP.</h3>
+  </hgroup>
+</section>
+
+<div class="grid">
+  <!-- Voice Cloning Form -->
+  <article>
+    <header><strong>Clone New Voice</strong></header>
+    <form method="post" action="/api/voices/clone" enctype="multipart/form-data">
+      <label for="name">Voice Name
+        <input type="text" id="name" name="name" placeholder="e.g. My Custom Voice" required />
+      </label>
+      <label for="audio_file">Sample Audio (wav, mp3, m4a, flac)
+        <input type="file" id="audio_file" name="audio_file" accept="audio/*" required />
+      </label>
+      <button type="submit" class="primary">Clone Voice</button>
+    </form>
+  </article>
+
+  <!-- Voices List -->
+  <article>
+    <header><strong>Existing Cloned Voices</strong></header>
+    {% if not voices %}
+    <p>No cloned voices found. Use the form to clone your first voice.</p>
+    {% else %}
+    <table role="grid">
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>ID</th>
+          <th style="text-align: right;">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for v in voices %}
+        <tr>
+          <td><span id="name-{{ v.id }}">{{ v.name }}</span></td>
+          <td><code>{{ v.id }}</code></td>
+          <td style="text-align: right;">
+            <div style="display: flex; gap: 0.5rem; justify-content: flex-end;">
+              <button class="outline" onclick="playSample('{{ v.id }}')" title="Test / Play Sample">Play</button>
+              <button class="outline secondary" onclick="renameVoice('{{ v.id }}', '{{ v.name }}')" title="Rename">Rename</button>
+              <a href="/api/voices/{{ v.id }}/export" role="button" class="outline contrast" title="Export to ZIP">Export</a>
+              <button class="outline error" style="border-color: #d81b60; color: #d81b60;" onclick="deleteVoice('{{ v.id }}')" title="Delete">Del</button>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% endif %}
+  </article>
+</div>
+
+<!-- Audio player for samples -->
+<audio id="samplePlayer" style="display:none"></audio>
+
 <script>
-async function delVoice(id){
-  const r=await fetch('/api/voices/'+id,{method:'DELETE'});
-  if(r.ok) location.reload(); else alert(await r.text());
-  return false;
+async function playSample(id) {
+  const player = document.getElementById('samplePlayer');
+  player.src = `/api/voice-samples/${id}.wav?t=` + new Date().getTime();
+  player.play();
+}
+
+async function renameVoice(id, currentName) {
+  const newName = prompt('Enter new name for voice:', currentName);
+  if (!newName || newName === currentName) return;
+
+  const res = await fetch(`/api/voices/${id}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name: newName })
+  });
+
+  if (res.ok) {
+    location.reload();
+  } else {
+    alert('Failed to rename: ' + await res.text());
+  }
+}
+
+async function deleteVoice(id) {
+  if (!confirm(`Are you sure you want to delete voice "${id}"?`)) return;
+
+  const res = await fetch(`/api/voices/${id}`, { method: 'DELETE' });
+  if (res.ok) {
+    location.reload();
+  } else {
+    alert('Failed to delete: ' + await res.text());
+  }
 }
 </script>
+
+<style>
+  button.outline.error:hover {
+    background-color: #d81b60;
+    color: white;
+  }
+  a[role="button"] {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.8rem;
+  }
+  button.outline {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.8rem;
+    margin-bottom: 0;
+  }
+</style>
 {% endblock %}

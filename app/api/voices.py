@@ -3,7 +3,10 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+import io
+import zipfile
 from fastapi import APIRouter, Body, File, Form, HTTPException, Request, UploadFile
+from fastapi.responses import StreamingResponse
 
 from app.services.audio import normalize_to_wav, sanitize_voice_id, timestamped_output, validate_upload
 
@@ -104,6 +107,46 @@ async def clone_voice(
         metadata=metadata_json,
     )
     return created
+
+
+@router.get('/voices/{voice_id}/export')
+def export_voice(voice_id: str, request: Request):
+    registry = request.app.state.voice_registry
+    voice = registry.get(voice_id)
+    if not voice:
+        raise HTTPException(status_code=404, detail='Voice not found')
+
+    buffer = io.BytesIO()
+    with zipfile.ZipFile(buffer, 'w', zipfile.ZIP_DEFLATED) as zip_file:
+        # metadata.json
+        metadata = {
+            'id': voice['id'],
+            'name': voice['name'],
+            'type': voice['type'],
+            'language': voice.get('language', 'en'),
+            'metadata': voice.get('metadata', {}),
+        }
+        zip_file.writestr('metadata.json', json.dumps(metadata, indent=2))
+
+        # Audio sample
+        sample_path = voice.get('sample_path')
+        if sample_path and Path(sample_path).exists():
+            zip_file.write(sample_path, f"{voice_id}.wav")
+        else:
+            # Generate a sample if it doesn't exist
+            settings = request.app.state.settings
+            tts = request.app.state.tts_service
+            temp_path = settings.output_dir / f'export_preview_{voice_id}.wav'
+            tts.synthesize_to_wav('Hello from PocketTTS sample.', voice_id, temp_path)
+            zip_file.write(temp_path, f"{voice_id}.wav")
+            temp_path.unlink(missing_ok=True)
+
+    buffer.seek(0)
+    return StreamingResponse(
+        buffer,
+        media_type='application/zip',
+        headers={'Content-Disposition': f'attachment; filename=voice_{voice_id}.zip'},
+    )
 
 
 @router.get('/voice-samples/{voice_id}.wav')
