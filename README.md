@@ -54,7 +54,7 @@ docker run -d \
   -e SESSION_SECRET=$(openssl rand -hex 32) \
   -v $(pwd)/data:/app/data \
   --restart always \
-  ghcr.io/moltis-org/pockettts-coqui-bridge:latest
+  ghcr.io/virtuehearts/pockettts-coqui-bridge:latest
 ```
 
 ### Tutorial: Build & Deploy from Source
@@ -62,7 +62,7 @@ If you want to build the image yourself from the source code:
 
 1. **Clone the repository:**
    ```bash
-   git clone https://github.com/moltis-org/pockettts-coqui-bridge.git
+   git clone https://github.com/virtuehearts/pockettts-coqui-bridge.git
    cd pockettts-coqui-bridge
    ```
 
