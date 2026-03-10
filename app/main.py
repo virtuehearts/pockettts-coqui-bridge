@@ -49,6 +49,11 @@ def create_app() -> FastAPI:
     app.include_router(ui.router)
     app.include_router(voices.router)
     app.include_router(tts.router)
+    app.include_router(tts.v1_router)
+
+    @app.on_event('startup')
+    async def warm_start() -> None:
+        app.state.tts_service.warm_up(app.state.settings.default_voice)
 
     return app
 

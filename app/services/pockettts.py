@@ -64,6 +64,19 @@ class PocketTTSService:
         self._write_tensor_wav(output_path, audio, sample_rate=model.sample_rate)
         return output_path
 
+
+    def warm_up(self, default_voice: str) -> None:
+        """Best-effort model and default voice state warm-up."""
+        self._ensure_model_loaded()
+        if self._model is None:
+            return
+        try:
+            if default_voice not in self._voice_state_cache:
+                self._voice_state_cache[default_voice] = self._model.get_state_for_audio_prompt(default_voice)
+        except Exception:
+            # Keep warm-up non-fatal; synth requests can still proceed with lazy loading.
+            return
+
     def clone_and_register_assets(self, sample_wav_path: Path, embedding_path: Path) -> None:
         self.ensure_cloning_available()
         model = self._model

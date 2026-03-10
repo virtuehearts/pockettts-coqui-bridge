@@ -8,6 +8,7 @@ from fastapi.responses import FileResponse
 from app.services.audio import normalize_to_wav, timestamped_output, wav_to_mp3
 
 router = APIRouter(prefix='/api')
+v1_router = APIRouter(prefix='/v1')
 
 
 def _pick(params: dict, *keys: str, default=None):
@@ -79,6 +80,40 @@ async def tts(request: Request):
 
     if fmt == 'mp3':
         mp3_path = settings.output_dir / output_wav.with_suffix('.mp3').name
+        try:
+            wav_to_mp3(output_wav, mp3_path)
+        except RuntimeError as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
+        return FileResponse(mp3_path, media_type='audio/mpeg', filename=mp3_path.name)
+
+    return FileResponse(output_wav, media_type='audio/wav', filename=output_wav.name)
+
+
+@v1_router.post('/audio/speech')
+async def openai_speech(request: Request):
+    payload = await request.json()
+    text = _pick(payload, 'input', 'text')
+    if not text:
+        raise HTTPException(status_code=400, detail='input is required')
+
+    voice = _pick(payload, 'voice', 'speaker-id', 'speaker_id', 'speaker', default=request.app.state.settings.default_voice)
+    fmt = _pick(payload, 'response_format', 'format', default='wav').lower()
+
+    if not request.app.state.voice_registry.get(voice):
+        raise HTTPException(status_code=404, detail='voice not found')
+
+    output_wav = request.app.state.settings.output_dir / timestamped_output('tts', '.wav')
+    voice_info = request.app.state.voice_registry.get(voice)
+    request.app.state.tts_service.synthesize_to_wav(
+        text,
+        voice,
+        output_wav,
+        voice_sample=voice_info.get('sample_path') if voice_info else None,
+        voice_embedding=voice_info.get('embedding_path') if voice_info else None,
+    )
+
+    if fmt == 'mp3':
+        mp3_path = request.app.state.settings.output_dir / output_wav.with_suffix('.mp3').name
         try:
             wav_to_mp3(output_wav, mp3_path)
         except RuntimeError as exc:
