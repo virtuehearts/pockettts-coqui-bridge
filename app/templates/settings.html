@@ -1,14 +1,58 @@
 {% extends 'base.html' %}
 {% block content %}
-<h1>Settings / Health</h1>
-{% if message %}<p style="color: {{ 'red' if error else 'green' }}">{{ message }}</p>{% endif %}
-<pre>{{ health }}</pre>
+<section>
+  <hgroup>
+    <h2 style="color: var(--primary);">Settings & System Health</h2>
+    <p>Monitor your sovereign voice infrastructure.</p>
+  </hgroup>
+</section>
 
-<h2>Change Admin Password</h2>
-<form method="post" action="/settings/password">
-  <label>Current password <input type="password" name="current_password" required /></label><br/>
-  <label>New password <input type="password" name="new_password" minlength="8" required /></label><br/>
-  <label>Confirm new password <input type="password" name="confirm_password" minlength="8" required /></label><br/>
-  <button type="submit">Update password</button>
-</form>
+{% if message %}
+<div style="padding: 1rem; margin-bottom: 2rem; border-radius: 8px; background-color: {{ 'rgba(239, 68, 68, 0.1)' if error else 'rgba(16, 185, 129, 0.1)' }}; border: 1px solid {{ '#ef4444' if error else '#10b981' }}; color: {{ '#ef4444' if error else '#10b981' }};">
+    {{ message }}
+</div>
+{% endif %}
+
+<div class="grid">
+    <article>
+        <header><strong>System Status</strong></header>
+        <table role="grid">
+            <tbody>
+                <tr>
+                    <td>Authentication</td>
+                    <td><span class="status-badge" style="background-color: {{ '#10b981' if health.auth_enabled else '#f59e0b' }}; color: white;">{{ 'Enabled' if health.auth_enabled else 'Disabled' }}</span></td>
+                </tr>
+                <tr>
+                    <td>HuggingFace Token</td>
+                    <td><span class="status-badge" style="background-color: {{ '#10b981' if health.hf_token_set else '#64748b' }}; color: white;">{{ 'Configured' if health.hf_token_set else 'Not Set' }}</span></td>
+                </tr>
+            </tbody>
+        </table>
+        <footer>
+            <small>Directories:</small>
+            <div style="font-size: 0.75rem; color: var(--muted-color); margin-top: 0.5rem;">
+                <div>Voices: <code>{{ health.dirs.voices }}</code></div>
+                <div>Embeddings: <code>{{ health.dirs.embeddings }}</code></div>
+                <div>Output: <code>{{ health.dirs.output }}</code></div>
+            </div>
+        </footer>
+    </article>
+
+    <article>
+        <header><strong>Security</strong></header>
+        <form method="post" action="/settings/password">
+          <label for="current_password">Current Password
+            <input type="password" id="current_password" name="current_password" required />
+          </label>
+          <label for="new_password">New Password
+            <input type="password" id="new_password" name="new_password" minlength="8" required />
+          </label>
+          <label for="confirm_password">Confirm New Password
+            <input type="password" id="confirm_password" name="confirm_password" minlength="8" required />
+          </label>
+          <button type="submit">Update Password</button>
+        </form>
+    </article>
+</div>
+
 {% endblock %}

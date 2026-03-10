@@ -2,51 +2,63 @@
 {% block content %}
 <section>
   <hgroup>
-    <h2>TTS Synthesize</h2>
-    <h3>Test the TTS engine with various voices and formats.</h3>
+    <h2 style="color: var(--primary);">TTS Synthesize</h2>
+    <p>Test the production-grade TTS engine with any available voice.</p>
   </hgroup>
 </section>
 
-<article>
-  <form id="ttsForm">
-    <div class="grid">
-      <label for="speaker-id">Voice
-        <select id="speaker-id" name="speaker-id" required>
-          {% for v in voices %}
-          <option value="{{ v.id }}">{{ v.name }} ({{ v.type }})</option>
-          {% endfor %}
-        </select>
-      </label>
+<div class="grid">
+    <div style="flex: 1.5;">
+        <article>
+          <form id="ttsForm">
+            <div class="grid">
+              <label for="speaker-id">Voice
+                <select id="speaker-id" name="speaker-id" required>
+                  {% for v in voices %}
+                  <option value="{{ v.id }}">{{ v.name }} ({{ v.type }})</option>
+                  {% endfor %}
+                </select>
+              </label>
 
-      <label for="format">Output Format
-        <select id="format" name="format">
-          <option value="wav">WAV</option>
-          <option value="mp3">MP3</option>
-        </select>
-      </label>
+              <label for="format">Output Format
+                <select id="format" name="format">
+                  <option value="wav">WAV (Lossless)</option>
+                  <option value="mp3">MP3 (Compressed)</option>
+                </select>
+              </label>
+            </div>
+
+            <label for="text">Text to Speak
+              <textarea id="text" name="text" rows="6" placeholder="What should the voice say?" required></textarea>
+            </label>
+
+            <button type="submit" id="generateBtn">Generate & Play</button>
+          </form>
+        </article>
     </div>
 
-    <label for="text">Text to Speak
-      <textarea id="text" name="text" rows="5" placeholder="Enter text to synthesize..." required></textarea>
-    </label>
+    <div style="flex: 1;">
+        <article id="resultSection" style="display:none; height: 100%;">
+          <header><strong style="color: var(--primary);">Result</strong></header>
+          <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; gap: 2rem; padding: 1rem 0;">
+            <div id="waveform-placeholder" style="width: 100%; height: 60px; background: repeating-linear-gradient(90deg, var(--muted-border-color), var(--muted-border-color) 2px, transparent 2px, transparent 10px); opacity: 0.5;"></div>
+            <audio id="player" controls style="width: 100%;"></audio>
+            <a id="downloadLink" href="#" role="button" class="contrast" download="synthesized_audio" style="width: 100%;">Download .wav</a>
+          </div>
+        </article>
 
-    <button type="submit" id="generateBtn">Generate Audio</button>
-  </form>
-</article>
-
-<article id="resultSection" style="display:none">
-  <header><strong>Generated Audio</strong></header>
-  <div style="display: flex; flex-direction: column; align-items: center; gap: 1rem;">
-    <audio id="player" controls style="width: 100%;"></audio>
-    <a id="downloadLink" href="#" role="button" class="secondary" download="synthesized_audio">Download File</a>
-  </div>
-</article>
+        <article id="emptyState" style="height: 100%; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; color: var(--muted-color); border-style: dashed;">
+             <p>Generate audio to see results here.</p>
+        </article>
+    </div>
+</div>
 
 <script>
 document.getElementById('ttsForm').onsubmit = async (e) => {
   e.preventDefault();
   const btn = document.getElementById('generateBtn');
   const resultSection = document.getElementById('resultSection');
+  const emptyState = document.getElementById('emptyState');
   const player = document.getElementById('player');
   const downloadLink = document.getElementById('downloadLink');
 
@@ -70,12 +82,12 @@ document.getElementById('ttsForm').onsubmit = async (e) => {
 
     const format = fd.get('format');
     downloadLink.download = `synthesized_${new Date().getTime()}.${format}`;
+    downloadLink.innerText = `Download .${format.toUpperCase()}`;
 
+    emptyState.style.display = 'none';
     resultSection.style.display = 'block';
-    player.play();
 
-    // Smooth scroll to result
-    resultSection.scrollIntoView({ behavior: 'smooth' });
+    player.play();
   } catch (err) {
     alert('Request failed: ' + err.message);
   } finally {
