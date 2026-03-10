@@ -12,3 +12,4 @@ data/embeddings/*
 data/hf-cache/*
 !data/hf-cache/.gitkeep
 data/*.db
+server.log

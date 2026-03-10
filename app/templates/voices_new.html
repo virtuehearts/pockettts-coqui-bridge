@@ -1,9 +1,18 @@
 {% extends 'base.html' %}
 {% block content %}
-<h1>Create cloned voice</h1>
-<form method="post" action="/api/voices/clone" enctype="multipart/form-data">
-  <input name="name" placeholder="Voice name" required />
-  <input type="file" name="audio_file" required />
-  <button type="submit">Create</button>
-</form>
+<h1>Clone a New Voice</h1>
+<p>Upload a short, clean audio sample (5-10 seconds) to create a new voice clone.</p>
+<article>
+  <form method="post" action="/api/voices/clone" enctype="multipart/form-data">
+    <label for="name">Voice Name</label>
+    <input id="name" name="name" placeholder="e.g. My Custom Voice" required />
+
+    <label for="audio_file">Audio Sample (WAV, MP3, M4A, FLAC)</label>
+    <input type="file" id="audio_file" name="audio_file" accept="audio/*" required />
+
+    <small>Maximum file size: 25MB</small>
+
+    <button type="submit" style="margin-top: 1rem;">Start Cloning</button>
+  </form>
+</article>
 {% endblock %}

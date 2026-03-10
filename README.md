@@ -26,10 +26,10 @@ If `HF_TOKEN` is blank, the app still works with built-in voices.
 ```bash
 python -m venv .venv
 source .venv/bin/activate
+# Install dependencies (includes pocket-tts and torch)
 pip install -r requirements.txt
-# real Pocket-TTS backend
-pip install pocket-tts torch
 cp .env.example .env
+# Start the server
 uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
 ```
 
@@ -82,3 +82,16 @@ provider = "coqui"
 [voice.tts.coqui]
 endpoint = "http://localhost:8000"
 ```
+
+## Advanced Configuration
+
+- `HF_TOKEN`: Required for downloading some models or for better rate limits on Hugging Face.
+- `ENABLE_AUTH`: Set to `false` to disable the Admin UI login (not recommended for production).
+- `PORT`: Change the internal port (default 8000).
+
+## Tech Stack
+
+- **FastAPI**: High-performance web framework.
+- **Pocket-TTS**: Local TTS engine with voice cloning.
+- **Pico.css**: Lightweight CSS framework for the Admin UI.
+- **SQLite**: Simple and reliable metadata storage.

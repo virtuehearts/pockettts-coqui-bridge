@@ -3,25 +3,48 @@
 <h1>Moltis / Coqui TTS</h1>
 <p>Use this page to test the same <code>/api/tts</code> endpoint Moltis calls.</p>
 <form id="ttsForm">
-  <label>Text</label><br/>
-  <textarea name="text" rows="6" cols="60" placeholder="Enter text" required></textarea><br/>
-  <label>Voice</label>
-  <select name="speaker-id">
-    {% for v in voices %}<option value="{{ v.id }}">{{ v.name }} ({{ v.type }})</option>{% endfor %}
-  </select>
-  <label>Format</label>
-  <select name="format"><option>wav</option><option>mp3</option></select>
-  <button type="submit">Generate</button>
+  <label for="text">Text</label>
+  <textarea id="text" name="text" rows="6" placeholder="Enter text to synthesize..." required></textarea>
+
+  <div class="grid">
+    <div>
+      <label for="speaker-id">Voice</label>
+      <select id="speaker-id" name="speaker-id">
+        {% for v in voices %}<option value="{{ v.id }}">{{ v.name }} ({{ v.type }})</option>{% endfor %}
+      </select>
+    </div>
+    <div>
+      <label for="format">Format</label>
+      <select id="format" name="format">
+        <option value="wav">WAV</option>
+        <option value="mp3">MP3</option>
+      </select>
+    </div>
+  </div>
+
+  <button type="submit" id="submitBtn">Generate Audio</button>
 </form>
 <audio id="player" controls style="display:block; margin-top: 1rem;"></audio>
 <script>
 document.getElementById('ttsForm').onsubmit = async (e) => {
   e.preventDefault();
-  const fd = new FormData(e.target);
-  const res = await fetch('/api/tts', {method:'POST', body:fd});
-  if(!res.ok){ alert(await res.text()); return; }
-  const blob = await res.blob();
-  document.getElementById('player').src = URL.createObjectURL(blob);
+  const btn = document.getElementById('submitBtn');
+  const originalText = btn.innerText;
+  btn.innerText = 'Generating...';
+  btn.disabled = true;
+
+  try {
+    const fd = new FormData(e.target);
+    const res = await fetch('/api/tts', {method:'POST', body:fd});
+    if(!res.ok){ alert(await res.text()); return; }
+    const blob = await res.blob();
+    const player = document.getElementById('player');
+    player.src = URL.createObjectURL(blob);
+    player.play();
+  } finally {
+    btn.innerText = originalText;
+    btn.disabled = false;
+  }
 }
 </script>
 {% endblock %}

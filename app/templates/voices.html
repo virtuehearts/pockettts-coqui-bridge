@@ -1,18 +1,55 @@
 {% extends 'base.html' %}
 {% block content %}
 <h1>Cloned Voices</h1>
-<ul>
-{% for v in voices %}
-<li>{{ v.name }} ({{ v.id }})
-<form style="display:inline" onsubmit="return delVoice('{{ v.id }}')"><button>Delete</button></form>
-</li>
-{% endfor %}
-</ul>
+<figure>
+  <table role="grid">
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>ID</th>
+        <th>Preview</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for v in voices %}
+      <tr>
+        <td>
+          <span id="name-{{ v.id }}">{{ v.name }}</span>
+        </td>
+        <td><code>{{ v.id }}</code></td>
+        <td>
+          <audio controls src="/api/voice-samples/{{ v.id }}.wav" style="height: 30px;"></audio>
+        </td>
+        <td>
+          <div style="display: flex; gap: 0.5rem;">
+            <button class="outline" onclick="renameVoice('{{ v.id }}', '{{ v.name }}')" style="padding: 0.25rem 0.5rem; font-size: 0.8rem; margin-bottom:0;">Rename</button>
+            <button class="outline contrast" onclick="delVoice('{{ v.id }}')" style="padding: 0.25rem 0.5rem; font-size: 0.8rem; margin-bottom:0;">Delete</button>
+          </div>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</figure>
+
 <script>
 async function delVoice(id){
+  if(!confirm('Are you sure you want to delete this voice?')) return;
   const r=await fetch('/api/voices/'+id,{method:'DELETE'});
   if(r.ok) location.reload(); else alert(await r.text());
-  return false;
+}
+
+async function renameVoice(id, currentName) {
+  const newName = prompt('Enter new name for voice:', currentName);
+  if (newName && newName !== currentName) {
+    const r = await fetch('/api/voices/' + id, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: newName })
+    });
+    if (r.ok) location.reload(); else alert(await r.text());
+  }
 }
 </script>
 {% endblock %}

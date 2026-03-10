@@ -2,18 +2,29 @@
 <html>
 <head>
   <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>PocketTTS Coqui Bridge</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@1/css/pico.min.css">
   <link rel="stylesheet" href="/static/styles.css" />
 </head>
 <body>
-<nav>
-  <a href="/">Synthesize</a>
-  <a href="/voices">Voices</a>
-  <a href="/voices/new">Clone</a>
-  <a href="/settings">Settings</a>
-  <form action="/logout" method="post" style="display:inline"><button>Logout</button></form>
+<nav class="container">
+  <ul>
+    <li><strong>PocketTTS Bridge</strong></li>
+  </ul>
+  <ul>
+    <li><a href="/">Synthesize</a></li>
+    <li><a href="/voices">Voices</a></li>
+    <li><a href="/voices/new">Clone</a></li>
+    <li><a href="/settings">Settings</a></li>
+    <li>
+      <form action="/logout" method="post" style="display:inline; margin:0; padding:0;">
+        <button type="submit" class="outline" style="padding: 0.25rem 0.5rem; font-size: 0.8rem;">Logout</button>
+      </form>
+    </li>
+  </ul>
 </nav>
-<main>
+<main class="container">
 {% block content %}{% endblock %}
 </main>
 </body>

@@ -43,9 +43,11 @@ def settings_page(request: Request):
     guard = _guard(request)
     if guard:
         return guard
+    availability = request.app.state.tts_service.availability()
     health_data = {
         'auth_enabled': request.app.state.settings.enable_auth,
         'hf_token_set': bool(request.app.state.settings.hf_token),
+        'error': availability.get('error'),
         'dirs': {
             'voices': str(request.app.state.settings.voices_dir),
             'embeddings': str(request.app.state.settings.embeddings_dir),

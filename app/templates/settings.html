@@ -1,14 +1,53 @@
 {% extends 'base.html' %}
 {% block content %}
-<h1>Settings / Health</h1>
-{% if message %}<p style="color: {{ 'red' if error else 'green' }}">{{ message }}</p>{% endif %}
-<pre>{{ health }}</pre>
+<h1>Settings & System Health</h1>
+{% if message %}
+<ins>{{ message }}</ins>
+{% endif %}
 
-<h2>Change Admin Password</h2>
-<form method="post" action="/settings/password">
-  <label>Current password <input type="password" name="current_password" required /></label><br/>
-  <label>New password <input type="password" name="new_password" minlength="8" required /></label><br/>
-  <label>Confirm new password <input type="password" name="confirm_password" minlength="8" required /></label><br/>
-  <button type="submit">Update password</button>
-</form>
+<article>
+  <header>System Status</header>
+  <div class="grid">
+    <div>
+      <strong>Auth Enabled:</strong> {{ '✅' if health.auth_enabled else '❌' }}
+    </div>
+    <div>
+      <strong>HF Token Set:</strong> {{ '✅' if health.hf_token_set else '❌' }}
+    </div>
+  </div>
+  <hr>
+  {% if health.error %}
+  <div style="background-color: #fee; padding: 1rem; border-radius: 4px; border: 1px solid #fcc; margin-bottom: 1rem;">
+    <strong>Engine Initialization Error:</strong>
+    <pre style="white-space: pre-wrap; margin-top: 0.5rem; font-size: 0.8rem;">{{ health.error }}</pre>
+  </div>
+  {% endif %}
+  <strong>Directories:</strong>
+  <ul>
+    <li>Voices: <code>{{ health.dirs.voices }}</code></li>
+    <li>Embeddings: <code>{{ health.dirs.embeddings }}</code></li>
+    <li>Output: <code>{{ health.dirs.output }}</code></li>
+  </ul>
+</article>
+
+<article>
+  <header>Change Admin Password</header>
+  <form method="post" action="/settings/password">
+    <div class="grid">
+      <label for="current_password">
+        Current Password
+        <input type="password" id="current_password" name="current_password" required />
+      </label>
+      <label for="new_password">
+        New Password
+        <input type="password" id="new_password" name="new_password" minlength="8" required />
+      </label>
+      <label for="confirm_password">
+        Confirm New Password
+        <input type="password" id="confirm_password" name="confirm_password" minlength="8" required />
+      </label>
+    </div>
+    <button type="submit">Update Password</button>
+  </form>
+</article>
 {% endblock %}

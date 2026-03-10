@@ -22,12 +22,14 @@ class PocketTTSService:
 
     def availability(self) -> dict:
         self._ensure_model_loaded()
+        available = self._model is not None
         return {
             "engine": self.backend_name,
-            "available": self._model is not None,
-            "model_ready": self._model is not None,
-            "cloning_available": self._model is not None,
+            "available": available,
+            "model_ready": available,
+            "cloning_available": available,
             "error": self._init_error,
+            "mode": "production" if available else "degraded (tone-only)",
         }
 
     def ensure_cloning_available(self) -> None:
@@ -94,12 +96,20 @@ class PocketTTSService:
             try:
                 os.environ.setdefault("HF_HOME", str(self.settings.hf_cache_dir))
                 os.environ.setdefault("HUGGINGFACE_HUB_CACHE", str(self.settings.hf_cache_dir))
+
+                # Check for HF token and set it if present to allow downloading models if needed
+                if self.settings.hf_token:
+                    os.environ.setdefault("HF_TOKEN", self.settings.hf_token)
+
                 from pocket_tts import TTSModel, export_model_state
 
                 self._model = TTSModel.load_model()
                 self._export_model_state = export_model_state
+            except ImportError:
+                self._init_error = "pocket-tts or torch not installed. Run `pip install pocket-tts torch`."
             except Exception as exc:
-                self._init_error = str(exc)
+                import traceback
+                self._init_error = f"{type(exc).__name__}: {str(exc)}\n{traceback.format_exc()}"
 
     @staticmethod
     def _write_tensor_wav(path: Path, audio, sample_rate: int) -> None:
