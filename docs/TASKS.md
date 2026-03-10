@@ -12,6 +12,6 @@ Make the bridge actually usable with `kyutai-labs/pocket-tts` for local testing 
 - [x] Update setup docs so local testing with `pocket-tts` is straightforward.
 
 ## Next tasks
-- [ ] Add warm-up at app startup to pre-load model and first voice state.
-- [ ] Add API contract tests for OpenAI-format + multipart alias permutations.
+- [x] Add warm-up at app startup to pre-load model and first voice state.
+- [x] Add API contract tests for OpenAI-format + multipart alias permutations.
 - [ ] Add integration tests covering cloned voice lifecycle end-to-end.

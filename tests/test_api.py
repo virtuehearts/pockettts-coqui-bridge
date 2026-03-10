@@ -85,3 +85,41 @@ def test_change_admin_password():
 
     good_new = client.post('/login', data={'username': 'admin', 'password': 'newpass123'})
     assert good_new.status_code in (200, 302)
+
+
+def test_api_tts_alias_permutations_json():
+    client = _client()
+    for key in ('speaker-id', 'speaker_id', 'speaker', 'voice'):
+        resp = client.post('/api/tts', json={'text': 'hello', key: 'alba'})
+        assert resp.status_code == 200
+        assert resp.headers['content-type'].startswith('audio/wav')
+
+
+def test_api_tts_alias_permutations_multipart():
+    client = _client()
+    for key in ('speaker-id', 'speaker_id', 'speaker', 'voice'):
+        resp = client.post('/api/tts', data={'text': 'hello', key: 'alba'})
+        assert resp.status_code == 200
+        assert resp.headers['content-type'].startswith('audio/wav')
+
+
+def test_v1_audio_speech_contract():
+    client = _client()
+    resp = client.post('/v1/audio/speech', json={'model': 'gpt-4o-mini-tts', 'input': 'hello', 'voice': 'alba'})
+    assert resp.status_code == 200
+    assert resp.headers['content-type'].startswith('audio/wav')
+    assert len(resp.content) > 44
+
+
+def test_v1_audio_speech_missing_input():
+    client = _client()
+    resp = client.post('/v1/audio/speech', json={'voice': 'alba'})
+    assert resp.status_code == 400
+    assert resp.json()['detail'] == 'input is required'
+
+
+def test_v1_audio_speech_unknown_voice():
+    client = _client()
+    resp = client.post('/v1/audio/speech', json={'input': 'hello', 'voice': 'unknown-voice'})
+    assert resp.status_code == 404
+    assert resp.json()['detail'] == 'voice not found'
