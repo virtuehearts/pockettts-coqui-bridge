@@ -94,6 +94,9 @@ class PocketTTSService:
             try:
                 os.environ.setdefault("HF_HOME", str(self.settings.hf_cache_dir))
                 os.environ.setdefault("HUGGINGFACE_HUB_CACHE", str(self.settings.hf_cache_dir))
+                if self.settings.hf_token:
+                    os.environ["HF_TOKEN"] = self.settings.hf_token
+
                 from pocket_tts import TTSModel, export_model_state
 
                 self._model = TTSModel.load_model()
@@ -103,17 +106,10 @@ class PocketTTSService:
 
     @staticmethod
     def _write_tensor_wav(path: Path, audio, sample_rate: int) -> None:
-        values = audio.detach().cpu().flatten().tolist()
+        import scipy.io.wavfile
+
         path.parent.mkdir(parents=True, exist_ok=True)
-        with wave.open(str(path), "wb") as wav_file:
-            wav_file.setnchannels(1)
-            wav_file.setsampwidth(2)
-            wav_file.setframerate(sample_rate)
-            frames = bytearray()
-            for v in values:
-                clamped = max(-1.0, min(1.0, float(v)))
-                frames.extend(struct.pack("<h", int(clamped * 32767)))
-            wav_file.writeframes(bytes(frames))
+        scipy.io.wavfile.write(str(path), sample_rate, audio.detach().cpu().numpy())
 
     @staticmethod
     def _write_tone(path: Path, *, freq: float, duration_s: float, sample_rate: int = 22050) -> None:

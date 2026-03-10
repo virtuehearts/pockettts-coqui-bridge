@@ -39,6 +39,17 @@
     </article>
 
     <article>
+        <header><strong>HuggingFace Configuration</strong></header>
+        <p style="font-size: 0.85rem; color: var(--muted-color);">Set your HF Token to download high-quality voices and increase rate limits.</p>
+        <form method="post" action="/settings/hf_token">
+          <label for="hf_token">HuggingFace Token (HF_TOKEN)
+            <input type="password" id="hf_token" name="hf_token" value="{{ health.hf_token }}" placeholder="hf_..." />
+          </label>
+          <button type="submit">Update Token</button>
+        </form>
+    </article>
+
+    <article>
         <header><strong>Security</strong></header>
         <form method="post" action="/settings/password">
           <label for="current_password">Current Password

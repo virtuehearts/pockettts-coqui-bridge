@@ -38,8 +38,20 @@ def _bool_env(name: str, default: bool) -> bool:
 
 
 def get_settings() -> Settings:
+    hf_token = os.getenv("HF_TOKEN", "")
+    db_path = Path("data/voices.db")
+    if db_path.exists():
+        from app.db import connect
+        try:
+            with connect(db_path) as conn:
+                row = conn.execute("SELECT value FROM app_config WHERE key = 'hf_token'").fetchone()
+                if row:
+                    hf_token = row["value"]
+        except Exception:
+            pass
+
     return Settings(
-        hf_token=os.getenv("HF_TOKEN", ""),
+        hf_token=hf_token,
         app_username=os.getenv("APP_USERNAME", "admin"),
         app_password=os.getenv("APP_PASSWORD", "change_me"),
         session_secret=os.getenv("SESSION_SECRET", "change_this_to_a_long_random_string"),

@@ -8,7 +8,13 @@ from app.db import connect
 
 BUILTIN_VOICES = [
     {"id": "alba", "name": "alba", "type": "builtin", "language": "en"},
-    {"id": "sol", "name": "sol", "type": "builtin", "language": "en"},
+    {"id": "marius", "name": "marius", "type": "builtin", "language": "en"},
+    {"id": "javert", "name": "javert", "type": "builtin", "language": "en"},
+    {"id": "jean", "name": "jean", "type": "builtin", "language": "en"},
+    {"id": "fantine", "name": "fantine", "type": "builtin", "language": "en"},
+    {"id": "cosette", "name": "cosette", "type": "builtin", "language": "en"},
+    {"id": "eponine", "name": "eponine", "type": "builtin", "language": "en"},
+    {"id": "azelma", "name": "azelma", "type": "builtin", "language": "en"},
 ]
 
 

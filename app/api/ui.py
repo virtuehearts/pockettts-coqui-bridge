@@ -31,17 +31,42 @@ def voices_page(request: Request):
 
 
 @router.get('/settings')
-def settings_page(request: Request):
+def settings_page(request: Request, message: str | None = None, error: bool = False):
     guard = _guard(request)
     if guard:
         return guard
     health_data = {
         'auth_enabled': request.app.state.settings.enable_auth,
         'hf_token_set': bool(request.app.state.settings.hf_token),
+        'hf_token': request.app.state.settings.hf_token if request.app.state.settings.hf_token else "",
         'dirs': {
             'voices': str(request.app.state.settings.voices_dir),
             'embeddings': str(request.app.state.settings.embeddings_dir),
             'output': str(request.app.state.settings.output_dir),
         },
     }
-    return request.app.state.templates.TemplateResponse('settings.html', {'request': request, 'health': health_data, 'message': None, 'error': False})
+    return request.app.state.templates.TemplateResponse('settings.html', {'request': request, 'health': health_data, 'message': message, 'error': error})
+
+
+@router.post('/settings/hf_token')
+async def update_hf_token(request: Request):
+    guard = _guard(request)
+    if guard:
+        return guard
+
+    from fastapi import Form
+    form_data = await request.form()
+    hf_token = form_data.get('hf_token', '').strip()
+
+    from app.db import connect
+    from pathlib import Path
+    db_path = Path("data/voices.db")
+    with connect(db_path) as conn:
+        conn.execute("INSERT OR REPLACE INTO app_config (key, value) VALUES ('hf_token', ?)", (hf_token,))
+        conn.commit()
+
+    request.app.state.settings.hf_token = hf_token
+    # If the model was already loaded, it won't pick up the new token until restart or manual intervention.
+    # But for now, we just update the settings.
+
+    return settings_page(request, message="HuggingFace token updated successfully", error=False)
