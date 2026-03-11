@@ -53,19 +53,19 @@ async def tts(request: Request):
         try:
             normalize_to_wav(src, normalized)
             tts_service.ensure_cloning_available()
+            tts_service.synthesize_to_wav(text, voice='clone', output_path=output_wav, voice_sample=str(normalized))
+            if save_voice:
+                voice_id = clone_name.lower().replace(' ', '-')
+                sample_path = settings.voices_dir / f'{voice_id}.wav'
+                sample_path.write_bytes(normalized.read_bytes())
+                emb_path = settings.embeddings_dir / f'{voice_id}.safetensors'
+                tts_service.clone_and_register_assets(sample_path, emb_path)
+                registry.create_cloned(voice_id, clone_name, str(sample_path), str(emb_path))
         except Exception as exc:
             raise HTTPException(status_code=400, detail=str(exc)) from exc
         finally:
             src.unlink(missing_ok=True)
-        tts_service.synthesize_to_wav(text, voice='clone', output_path=output_wav)
-        if save_voice:
-            voice_id = clone_name.lower().replace(' ', '-')
-            sample_path = settings.voices_dir / f'{voice_id}.wav'
-            sample_path.write_bytes(normalized.read_bytes())
-            emb_path = settings.embeddings_dir / f'{voice_id}.safetensors'
-            tts_service.clone_and_register_assets(sample_path, emb_path)
-            registry.create_cloned(voice_id, clone_name, str(sample_path), str(emb_path))
-        normalized.unlink(missing_ok=True)
+            normalized.unlink(missing_ok=True)
     else:
         if not registry.get(voice):
             raise HTTPException(status_code=404, detail='voice not found')
