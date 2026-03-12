@@ -81,7 +81,13 @@ async def clone_voice(
     data = await audio_file.read()
     validate_upload(audio_file.filename or 'upload.wav', len(data), settings.max_upload_size_mb)
 
-    voice_id = sanitize_voice_id(name)
+    base_voice_id = sanitize_voice_id(name)
+    voice_id = base_voice_id
+    counter = 1
+    while registry.get(voice_id):
+        voice_id = f"{base_voice_id}-{counter}"
+        counter += 1
+
     temp_source = settings.output_dir / timestamped_output('upload', Path(audio_file.filename or 'x.wav').suffix)
     temp_source.write_bytes(data)
     sample_path = settings.voices_dir / f'{voice_id}.wav'
@@ -101,6 +107,9 @@ async def clone_voice(
             raise HTTPException(status_code=400, detail=str(exc)) from exc
 
     metadata_json = json.loads(metadata) if metadata else {}
+    if counter > 1:
+        name = f"{name} ({counter})"
+
     created = registry.create_cloned(
         voice_id=voice_id,
         name=name,
