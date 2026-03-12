@@ -41,9 +41,10 @@ def normalize_to_wav(source: Path, target: Path) -> Path:
 
     # Always use ffmpeg to ensure 16-bit PCM and 24000Hz mono output
     cmd = ["ffmpeg", "-y", "-i", str(source), "-ar", "24000", "-ac", "1", "-acodec", "pcm_s16le", str(target)]
-    proc = subprocess.run(cmd, capture_output=True, text=True)
+    proc = subprocess.run(cmd, capture_output=True)
     if proc.returncode != 0:
-        raise RuntimeError(f"ffmpeg conversion failed: {proc.stderr.strip()}")
+        stderr = proc.stderr.decode("utf-8", errors="replace")
+        raise RuntimeError(f"ffmpeg conversion failed: {stderr.strip()}")
     return target
 
 
@@ -51,9 +52,10 @@ def wav_to_mp3(source_wav: Path, target_mp3: Path) -> Path:
     if not ffmpeg_available():
         raise RuntimeError("ffmpeg is required for mp3 output but is not installed")
     cmd = ["ffmpeg", "-y", "-i", str(source_wav), str(target_mp3)]
-    proc = subprocess.run(cmd, capture_output=True, text=True)
+    proc = subprocess.run(cmd, capture_output=True)
     if proc.returncode != 0:
-        raise RuntimeError(f"ffmpeg mp3 conversion failed: {proc.stderr.strip()}")
+        stderr = proc.stderr.decode("utf-8", errors="replace")
+        raise RuntimeError(f"ffmpeg mp3 conversion failed: {stderr.strip()}")
     return target_mp3
 
 
