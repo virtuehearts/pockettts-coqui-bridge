@@ -66,7 +66,20 @@ async def update_hf_token(request: Request):
         conn.commit()
 
     request.app.state.settings.hf_token = hf_token
-    # If the model was already loaded, it won't pick up the new token until restart or manual intervention.
-    # But for now, we just update the settings.
 
-    return settings_page(request, message="HuggingFace token updated successfully", error=False)
+    # Reload the model to pick up the new token
+    request.app.state.tts_service.reload_model()
+
+    # Check if cloning is now available
+    availability = request.app.state.tts_service.availability()
+    if availability['cloning_available']:
+        msg = "HuggingFace token updated and voice cloning is now ENABLED."
+        err = False
+    elif availability['available']:
+        msg = "HuggingFace token updated, but voice cloning is still UNSUPPORTED. Verify your token has access to the model."
+        err = True
+    else:
+        msg = f"HuggingFace token updated, but model failed to load: {availability.get('error', 'Unknown error')}"
+        err = True
+
+    return settings_page(request, message=msg, error=err)

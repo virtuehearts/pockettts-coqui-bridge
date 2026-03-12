@@ -75,7 +75,7 @@ def test_clone_voice_falls_back_when_model_unavailable():
     data = {'name': 'my custom voice'}
     try:
         resp = client.post('/api/voices/clone', data=data, files=files)
-        if resp.status_code == 400 and "We could not download the weights" in resp.json().get("detail", ""):
+        if resp.status_code == 400 and ("We could not download the weights" in resp.json().get("detail", "") or "voice cloning is unsupported" in resp.json().get("detail", "")):
             return
         assert resp.status_code == 200
         payload = resp.json()
@@ -151,7 +151,7 @@ def test_voice_export():
     data = {'name': 'export-test'}
     try:
         resp = client.post('/api/voices/clone', data=data, files=files)
-        if resp.status_code == 400 and "We could not download the weights" in resp.json().get("detail", ""):
+        if resp.status_code == 400 and ("We could not download the weights" in resp.json().get("detail", "") or "voice cloning is unsupported" in resp.json().get("detail", "")):
             # Create a manual registry entry for the export test if cloning fails
             registry = client.app.state.voice_registry
             registry.create_cloned("export-test", "export-test", "data/voices/export-test.wav")
@@ -183,12 +183,12 @@ def test_voice_rename():
     data = {'name': 'rename-test'}
     try:
         resp = client.post('/api/voices/clone', data=data, files=files)
-        if resp.status_code == 400 and "We could not download the weights" in resp.json().get("detail", ""):
+        if resp.status_code == 400 and ("We could not download the weights" in resp.json().get("detail", "") or "voice cloning is unsupported" in resp.json().get("detail", "")):
             # Create a manual registry entry for rename test
             registry = client.app.state.voice_registry
             registry.create_cloned("rename-test", "rename-test", "data/voices/rename-test.wav")
     except ValueError as exc:
-        if "We could not download the weights" in str(exc):
+        if "We could not download the weights" in str(exc) or "voice cloning is unsupported" in str(exc):
             # Manual entry
             registry = client.app.state.voice_registry
             registry.create_cloned("rename-test", "rename-test", "data/voices/rename-test.wav")
@@ -214,7 +214,7 @@ def test_api_tts_cloning_and_saving():
 
     try:
         resp = client.post('/api/tts', data=data, files=files)
-        if resp.status_code == 400 and "We could not download the weights" in resp.json().get("detail", ""):
+        if resp.status_code == 400 and ("We could not download the weights" in resp.json().get("detail", "") or "voice cloning is unsupported" in resp.json().get("detail", "")):
             return
         assert resp.status_code == 200
         assert resp.headers['content-type'].startswith('audio/wav')

@@ -22,11 +22,15 @@ class PocketTTSService:
 
     def availability(self) -> dict:
         self._ensure_model_loaded()
+        cloning_supported = False
+        if self._model is not None:
+            cloning_supported = getattr(self._model, "has_voice_cloning", False)
+
         return {
             "engine": self.backend_name,
             "available": self._model is not None,
             "model_ready": self._model is not None,
-            "cloning_available": self._model is not None,
+            "cloning_available": cloning_supported,
             "error": self._init_error,
         }
 
@@ -35,6 +39,11 @@ class PocketTTSService:
         if self._model is None:
             raise RuntimeError(
                 "Pocket-TTS model is unavailable. Install dependencies (`pip install pocket-tts torch`) and ensure model assets can be downloaded."
+            )
+        if not getattr(self._model, "has_voice_cloning", False):
+            raise RuntimeError(
+                "Pocket-TTS model loaded but voice cloning is unsupported. "
+                "Ensure your HF_TOKEN is valid and you have accepted the terms at https://huggingface.co/kyutai/pocket-tts"
             )
 
     def synthesize_to_wav(
@@ -84,6 +93,18 @@ class PocketTTSService:
         embedding_path.parent.mkdir(parents=True, exist_ok=True)
         self._export_model_state(state, str(embedding_path))
         self._voice_state_cache[str(embedding_path)] = state
+
+    def reload_model(self) -> None:
+        """Force a reload of the model, typically after updating HF token."""
+        with self._lock:
+            self._model = None
+            self._init_error = None
+            self._voice_state_cache.clear()
+            # Clear HF_TOKEN from env to ensure _ensure_model_loaded sets it correctly from settings
+            if "HF_TOKEN" in os.environ:
+                del os.environ["HF_TOKEN"]
+
+        self._ensure_model_loaded()
 
     def _ensure_model_loaded(self) -> None:
         if self._model is not None or self._init_error is not None:
