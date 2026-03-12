@@ -20,6 +20,7 @@ class Settings:
     output_dir: Path = Path("data/output")
     hf_cache_dir: Path = Path("data/hf-cache")
     default_voice: str = "alba"
+    default_output_format: str = "wav"
     max_upload_size_mb: int = 25
     cors_origins: list[str] = None
 
@@ -57,4 +58,6 @@ def get_settings() -> Settings:
         session_secret=os.getenv("SESSION_SECRET", "change_this_to_a_long_random_string"),
         port=int(os.getenv("PORT", "8000")),
         enable_auth=_bool_env("ENABLE_AUTH", True),
+        default_voice=os.getenv("DEFAULT_VOICE", "alba"),
+        default_output_format=os.getenv("DEFAULT_OUTPUT_FORMAT", "wav").lower(),
     )

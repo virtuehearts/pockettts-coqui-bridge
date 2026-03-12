@@ -39,7 +39,7 @@ async def tts(request: Request):
         raise HTTPException(status_code=400, detail='text is required')
 
     voice = _pick(params, 'speaker-id', 'speaker_id', 'voice', 'speaker', default=settings.default_voice)
-    fmt = _pick(params, 'format', default='wav').lower()
+    fmt = _pick(params, 'format', default=settings.default_output_format).lower()
     save_voice = str(_pick(params, 'save_voice', default='false')).lower() in {'1', 'true', 'yes'}
     clone_name = _pick(params, 'clone_name', default='cloned-voice')
 
@@ -97,7 +97,7 @@ async def openai_speech(request: Request):
         raise HTTPException(status_code=400, detail='input is required')
 
     voice = _pick(payload, 'voice', 'speaker-id', 'speaker_id', 'speaker', default=request.app.state.settings.default_voice)
-    fmt = _pick(payload, 'response_format', 'format', default='wav').lower()
+    fmt = _pick(payload, 'response_format', 'format', default=request.app.state.settings.default_output_format).lower()
 
     if not request.app.state.voice_registry.get(voice):
         raise HTTPException(status_code=404, detail='voice not found')

@@ -7,7 +7,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 
-SUPPORTED_UPLOAD_EXTENSIONS = {".wav", ".mp3", ".m4a", ".flac"}
+SUPPORTED_UPLOAD_EXTENSIONS = {".wav", ".mp3", ".m4a", ".flac", ".ogg", ".opus", ".webm"}
 
 
 def sanitize_voice_id(name: str) -> str:

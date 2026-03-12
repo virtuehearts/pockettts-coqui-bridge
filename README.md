@@ -97,6 +97,80 @@ provider = "coqui"
 endpoint = "http://your-server-ip:8000"
 ```
 
+### Using Custom Voices with Moltis
+
+To use a specific cloned voice (e.g., `Mya-01`) with Moltis, you have two primary options:
+
+1.  **Environment Variable (Global Default):**
+    Set the `DEFAULT_VOICE` environment variable on the bridge container to the ID of your cloned voice.
+    ```bash
+    -e DEFAULT_VOICE=mya-01
+    ```
+    *Note: Voice IDs are typically the lowercase, slugified version of the name.*
+
+2.  **Moltis Configuration:**
+    Ensure your Moltis setup is configured to request the specific voice ID. If Moltis supports passing a speaker ID to the Coqui provider, use the ID found in the Bridge Admin UI.
+
+3.  **Default Output Format:**
+    If your client requires MP3 by default, you can set:
+    ```bash
+    -e DEFAULT_OUTPUT_FORMAT=mp3
+    ```
+
+## 👥 Voice Management
+
+### Cloning via Admin UI
+1.  Log in to the Admin UI (`http://your-server-ip:8000`).
+2.  Navigate to the **Voices** tab.
+3.  Click **Clone New Voice**.
+4.  Upload a clean 5-10 second audio sample (WAV, MP3, OGG, OPUS, etc.).
+5.  Give it a name (e.g., `Mya-01`) and click **Clone**.
+6.  The voice is now ready for use via the API.
+
+### Cloning via API
+You can programmatically clone voices by sending a `multipart/form-data` request:
+
+```bash
+curl -X POST http://localhost:8000/api/voices/clone \
+  -H "Authorization: Basic $(echo -n 'admin:your_password' | base64)" \
+  -F "name=Mya-01" \
+  -F "audio_file=@path/to/sample.wav"
+```
+
+## 🛠 Advanced API Usage
+
+### Text-to-Speech (TTS)
+Standard Coqui-compatible endpoint.
+
+**Basic Request:**
+```bash
+curl -X POST http://localhost:8000/api/tts \
+  -H "Content-Type: application/json" \
+  -d '{
+    "text": "Hello, this is a test.",
+    "speaker_id": "mya-01",
+    "format": "wav"
+  }' \
+  --output speech.wav
+```
+
+**Parameters:**
+*   `text` (required): The text to synthesize.
+*   `speaker_id` / `voice`: The ID of the voice to use.
+*   `format`: `wav` (default) or `mp3`.
+
+### On-the-Fly Cloning
+Synthesize speech using a reference audio file without permanently saving the voice:
+
+```bash
+curl -X POST http://localhost:8000/api/tts \
+  -F "text=Synthesis with instant cloning." \
+  -F "speaker_wav=@sample.wav" \
+  --output instant_clone.wav
+```
+
+To save the voice during this request, add `save_voice=true` and `clone_name=MyNewVoice`.
+
 ## ✨ Features
 
 *   **Coqui-Compatible API** — Standardized `POST /api/tts` endpoint. Drop-in replacement for existing Coqui setups.
