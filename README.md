@@ -84,6 +84,28 @@ If you want to build the image yourself from the source code:
      pockettts-bridge
    ```
 
+## 🔑 Authentication
+
+When `ENABLE_AUTH=true` (default), all API requests must be authenticated. You can manage API keys in the **Settings** tab of the Admin UI.
+
+### Supported Authentication Methods
+
+1.  **X-API-Key Header (Recommended):**
+    ```bash
+    -H "X-API-Key: your_api_key_here"
+    ```
+
+2.  **Bearer Token (OpenAI Compatibility):**
+    Used primarily for the `/v1/audio/speech` endpoint.
+    ```bash
+    -H "Authorization: Bearer your_api_key_here"
+    ```
+
+3.  **Query Parameter:**
+    ```
+    ?api_key=your_api_key_here
+    ```
+
 ## 🔌 Moltis Integration
 
 Integrating with your Moltis bot is effortless. Update your `config.toml` to point to your new bridge:
@@ -137,39 +159,118 @@ curl -X POST http://localhost:8000/api/voices/clone \
   -F "audio_file=@path/to/sample.wav"
 ```
 
-## 🛠 Advanced API Usage
+## 🛠 API Reference
 
-### Text-to-Speech (TTS)
-Standard Coqui-compatible endpoint.
+PocketTTS Coqui Bridge provides two primary interfaces: a Coqui-compatible API and an OpenAI-compatible Speech API.
 
-**Basic Request:**
+### 1. Coqui-Compatible TTS (`/api/tts`)
+
+The primary endpoint for generating high-quality speech. Supports JSON or multipart/form-data.
+
+**Endpoint:** `POST /api/tts`
+
+**JSON Parameters:**
+| Parameter | Type | Required | Description |
+| :--- | :--- | :--- | :--- |
+| `text` | string | Yes | The text to be synthesized into speech. |
+| `speaker_id` | string | No | The ID of the voice to use (e.g., `alba`, `mya-01`). |
+| `format` | string | No | Output format: `wav` (default) or `mp3`. |
+| `voice` | string | No | Alias for `speaker_id`. |
+| `speaker` | string | No | Alias for `speaker_id`. |
+
+**Multipart Parameters (for On-the-Fly Cloning):**
+| Parameter | Type | Required | Description |
+| :--- | :--- | :--- | :--- |
+| `text` | string | Yes | The text to be synthesized. |
+| `speaker_wav` | file | No | A reference audio file (WAV/MP3/etc.) for instant cloning. |
+| `save_voice` | boolean | No | If `true`, the cloned voice is permanently saved. |
+| `clone_name` | string | No | The name to assign if `save_voice` is `true`. |
+
+### 2. OpenAI-Compatible Speech (`/v1/audio/speech`)
+
+A drop-in replacement for OpenAI's `v1/audio/speech` endpoint, making it compatible with any tool that supports OpenAI's TTS.
+
+**Endpoint:** `POST /v1/audio/speech`
+
+**JSON Parameters:**
+| Parameter | Type | Required | Description |
+| :--- | :--- | :--- | :--- |
+| `input` | string | Yes | The text to synthesize (alias for `text`). |
+| `voice` | string | Yes | The voice ID to use. |
+| `response_format`| string | No | Output format: `mp3` (default) or `wav`. |
+| `model` | string | No | Ignored (provided for compatibility). |
+
+### 3. Voice Management API
+
+Manage your voice library programmatically.
+
+*   **List Voices:** `GET /api/voices` — Returns a list of all available built-in and cloned voices.
+*   **Get Voice Details:** `GET /api/voices/{voice_id}` — Returns metadata for a specific voice.
+*   **Clone Voice:** `POST /api/voices/clone` — Permanently clone a voice via `multipart/form-data`.
+*   **Export Voice:** `GET /api/voices/{voice_id}/export` — Download a ZIP archive containing the voice model and sample.
+*   **Delete Voice:** `DELETE /api/voices/{voice_id}` — Remove a cloned voice from the registry.
+
+## 🚀 Examples for OpenClaw and Other Apps
+
+Use these practical `curl` examples to integrate PocketTTS Bridge into any bot or application. Replace `your_api_key_here` with a key from the Bridge Settings.
+
+### 1. Simple MP3 Generation (via `X-API-Key`)
+Generate an MP3 using a specific voice:
+
 ```bash
 curl -X POST http://localhost:8000/api/tts \
+  -H "X-API-Key: your_api_key_here" \
   -H "Content-Type: application/json" \
   -d '{
-    "text": "Hello, this is a test.",
-    "speaker_id": "mya-01",
-    "format": "wav"
+    "text": "The sovereign voice layer is ready for deployment.",
+    "voice": "alba",
+    "format": "mp3"
   }' \
-  --output speech.wav
+  --output output.mp3
 ```
 
-**Parameters:**
-*   `text` (required): The text to synthesize.
-*   `speaker_id` / `voice`: The ID of the voice to use.
-*   `format`: `wav` (default) or `mp3`.
-
-### On-the-Fly Cloning
-Synthesize speech using a reference audio file without permanently saving the voice:
+### 2. Using Custom Cloned Voices
+If you've cloned a voice via the UI or API and its ID is `mya-01`:
 
 ```bash
 curl -X POST http://localhost:8000/api/tts \
-  -F "text=Synthesis with instant cloning." \
-  -F "speaker_wav=@sample.wav" \
-  --output instant_clone.wav
+  -H "X-API-Key: your_api_key_here" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "text": "Hello! I am your custom voice assistant.",
+    "voice": "mya-01",
+    "format": "mp3"
+  }' \
+  --output voice.mp3
 ```
 
-To save the voice during this request, add `save_voice=true` and `clone_name=MyNewVoice`.
+### 3. OpenAI-Compatible Request (OpenClaw / ChatGPT)
+Many bots (like OpenClaw) use OpenAI's TTS schema. Point them to `http://your-server-ip:8000/v1` and use your API key:
+
+```bash
+curl -X POST http://localhost:8000/v1/audio/speech \
+  -H "Authorization: Bearer your_api_key_here" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "input": "This is synthesized via the OpenAI-compatible endpoint.",
+    "voice": "mya-01",
+    "model": "tts-1",
+    "response_format": "mp3"
+  }' \
+  --output openai_speech.mp3
+```
+
+### 4. Instant On-the-Fly Cloning
+Synthesize speech with a voice from a local file without saving it to the registry:
+
+```bash
+curl -X POST http://localhost:8000/api/tts \
+  -H "X-API-Key: your_api_key_here" \
+  -F "text=I will speak using the provided reference file." \
+  -F "speaker_wav=@path/to/my_voice_sample.wav" \
+  -F "format=mp3" \
+  --output cloned_output.mp3
+```
 
 ## ✨ Features
 
