@@ -1,0 +1,65 @@
+{% extends 'base.html' %}
+{% block content %}
+<section>
+  <hgroup>
+    <h2 style="color: var(--primary);">API Key Management</h2>
+    <p>Securely access the TTS engine from your applications.</p>
+  </hgroup>
+</section>
+
+{% if new_key %}
+<div style="padding: 1.5rem; margin-bottom: 2rem; border-radius: 8px; background-color: rgba(16, 185, 129, 0.1); border: 2px solid #10b981; color: #10b981;">
+    <h4 style="margin-top: 0;">New API Key Created!</h4>
+    <p>Please copy this key now. It will not be shown again.</p>
+    <code style="font-size: 1.2rem; display: block; padding: 1rem; background: rgba(0,0,0,0.3); border-radius: 4px; margin: 1rem 0;">{{ new_key }}</code>
+</div>
+{% endif %}
+
+<div class="grid">
+    <article>
+        <header><strong>Active Keys</strong></header>
+        {% if keys %}
+        <table role="grid">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Created</th>
+                    <th>Usage (Chars)</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for key in keys %}
+                <tr>
+                    <td>{{ key.name }}</td>
+                    <td><small>{{ key.created_at }}</small></td>
+                    <td>{{ "{:,}".format(key.usage_chars) }}</td>
+                    <td>
+                        <form action="/api-keys/delete" method="post" style="display:inline;" onsubmit="return confirm('Are you sure you want to delete this API key?')">
+                            <input type="hidden" name="key_id" value="{{ key.id }}">
+                            <button type="submit" class="outline contrast" style="padding: 0.2rem 0.5rem; font-size: 0.7rem; margin: 0;">Delete</button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <p>No API keys found. Create one below to get started.</p>
+        {% endif %}
+    </article>
+
+    <article>
+        <header><strong>Create New Key</strong></header>
+        <form action="/api-keys/create" method="post">
+            <label for="name">Key Name (e.g., 'Moltis Bot')
+                <input type="text" id="name" name="name" placeholder="Moltis Bot" required />
+            </label>
+            <button type="submit">Generate API Key</button>
+        </form>
+        <footer>
+            <small>Use this key in the <code>X-API-Key</code> header of your requests.</small>
+        </footer>
+    </article>
+</div>
+{% endblock %}

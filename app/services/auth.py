@@ -80,3 +80,41 @@ class AuthService:
 
     def ui_authenticated(self, request: Request) -> bool:
         return (not self.is_enabled()) or bool(request.session.get("user"))
+
+    def _hash_api_key(self, key: str) -> str:
+        return hashlib.sha256(key.encode('utf-8')).hexdigest()
+
+    def create_api_key(self, name: str) -> str:
+        key = f"pt_{secrets.token_urlsafe(32)}"
+        key_hash = self._hash_api_key(key)
+        key_id = secrets.token_hex(4)
+        with connect(self.db_path) as conn:
+            conn.execute(
+                'INSERT INTO api_keys (id, name, key_hash) VALUES (?, ?, ?)',
+                (key_id, name, key_hash),
+            )
+            conn.commit()
+        return key
+
+    def list_api_keys(self) -> list[dict]:
+        with connect(self.db_path) as conn:
+            rows = conn.execute('SELECT * FROM api_keys ORDER BY created_at DESC').fetchall()
+        return [dict(row) for row in rows]
+
+    def delete_api_key(self, key_id: str) -> None:
+        with connect(self.db_path) as conn:
+            conn.execute('DELETE FROM api_keys WHERE id = ?', (key_id,))
+            conn.commit()
+
+    def validate_api_key(self, key: str) -> dict | None:
+        if not key:
+            return None
+        key_hash = self._hash_api_key(key)
+        with connect(self.db_path) as conn:
+            row = conn.execute('SELECT * FROM api_keys WHERE key_hash = ?', (key_hash,)).fetchone()
+        return dict(row) if row else None
+
+    def increment_usage(self, key_id: str, chars: int) -> None:
+        with connect(self.db_path) as conn:
+            conn.execute('UPDATE api_keys SET usage_chars = usage_chars + ? WHERE id = ?', (chars, key_id))
+            conn.commit()

@@ -23,6 +23,14 @@ async def tts(request: Request):
     settings = request.app.state.settings
     registry = request.app.state.voice_registry
     tts_service = request.app.state.tts_service
+    auth_service = request.app.state.auth_service
+
+    api_key_data = None
+    if settings.enable_auth:
+        api_key = request.headers.get('X-API-Key') or request.query_params.get('api_key')
+        api_key_data = auth_service.validate_api_key(api_key)
+        if not api_key_data and not auth_service.ui_authenticated(request):
+            raise HTTPException(status_code=401, detail='Invalid API Key')
 
     params = {}
     upload_file = None
@@ -84,13 +92,33 @@ async def tts(request: Request):
             wav_to_mp3(output_wav, mp3_path)
         except RuntimeError as exc:
             raise HTTPException(status_code=400, detail=str(exc)) from exc
+        if api_key_data:
+            auth_service.increment_usage(api_key_data['id'], len(text))
         return FileResponse(mp3_path, media_type='audio/mpeg', filename=mp3_path.name)
+
+    if api_key_data:
+        auth_service.increment_usage(api_key_data['id'], len(text))
 
     return FileResponse(output_wav, media_type='audio/wav', filename=output_wav.name)
 
 
 @v1_router.post('/audio/speech')
 async def openai_speech(request: Request):
+    settings = request.app.state.settings
+    auth_service = request.app.state.auth_service
+
+    api_key_data = None
+    if settings.enable_auth:
+        api_key = request.headers.get('X-API-Key') or request.query_params.get('api_key')
+        # Also check Authorization header for OpenAI compatibility
+        auth_header = request.headers.get('Authorization', '')
+        if auth_header.startswith('Bearer '):
+            api_key = api_key or auth_header[7:].strip()
+
+        api_key_data = auth_service.validate_api_key(api_key)
+        if not api_key_data and not auth_service.ui_authenticated(request):
+            raise HTTPException(status_code=401, detail='Invalid API Key')
+
     payload = await request.json()
     text = _pick(payload, 'input', 'text')
     if not text:
@@ -118,8 +146,13 @@ async def openai_speech(request: Request):
             wav_to_mp3(output_wav, mp3_path)
         except RuntimeError as exc:
             raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+        if api_key_data:
+            auth_service.increment_usage(api_key_data['id'], len(text))
         return FileResponse(mp3_path, media_type='audio/mpeg', filename=mp3_path.name)
 
+    if api_key_data:
+        auth_service.increment_usage(api_key_data['id'], len(text))
     return FileResponse(output_wav, media_type='audio/wav', filename=output_wav.name)
 
 

@@ -48,6 +48,39 @@ def settings_page(request: Request, message: str | None = None, error: bool = Fa
     return request.app.state.templates.TemplateResponse('settings.html', {'request': request, 'health': health_data, 'message': message, 'error': error})
 
 
+@router.get('/api-keys')
+def api_keys_page(request: Request, new_key: str | None = None):
+    guard = _guard(request)
+    if guard:
+        return guard
+    keys = request.app.state.auth_service.list_api_keys()
+    return request.app.state.templates.TemplateResponse('api_keys.html', {'request': request, 'keys': keys, 'new_key': new_key})
+
+
+@router.post('/api-keys/create')
+async def create_api_key(request: Request):
+    guard = _guard(request)
+    if guard:
+        return guard
+    form = await request.form()
+    name = form.get('name', 'New Key')
+    new_key = request.app.state.auth_service.create_api_key(name)
+    keys = request.app.state.auth_service.list_api_keys()
+    return request.app.state.templates.TemplateResponse('api_keys.html', {'request': request, 'keys': keys, 'new_key': new_key})
+
+
+@router.post('/api-keys/delete')
+async def delete_api_key(request: Request):
+    guard = _guard(request)
+    if guard:
+        return guard
+    form = await request.form()
+    key_id = form.get('key_id')
+    if key_id:
+        request.app.state.auth_service.delete_api_key(key_id)
+    return RedirectResponse('/api-keys', status_code=303)
+
+
 @router.post('/settings/hf_token')
 async def update_hf_token(request: Request):
     guard = _guard(request)
