@@ -1,14 +1,14 @@
 <div align="center">
-  <img src="https://raw.githubusercontent.com/moltis-org/moltis/main/website/favicon.svg" width="100" height="100" alt="PocketTTS Coqui Bridge">
+  <img src="https://raw.githubusercontent.com/agent-org/agent/main/website/favicon.svg" width="100" height="100" alt="PocketTTS Coqui Bridge">
   <h1>PocketTTS Coqui Bridge</h1>
-  <p><strong>The Sovereign Voice Layer for Moltis</strong></p>
+  <p><strong>The Sovereign Voice Layer for Agent</strong></p>
   <p><em>Real-time TTS. Zero Latency. 100% Local.</em></p>
 
   <p>
     <a href="#key-advantages">Advantages</a> •
     <a href="#installation">Installation</a> •
     <a href="#comparison">The Killer Edge</a> •
-    <a href="#moltis-integration">Moltis Integration</a> •
+    <a href="#agent-integration">Agent Integration</a> •
     <a href="#features">Features</a>
   </p>
 </div>
@@ -19,14 +19,14 @@
 
 **PocketTTS Coqui Bridge** is a game-changing, production-grade bridge that brings elite-level Text-to-Speech directly to your hardware. No expensive GPUs, no predatory API fees, and absolutely no data harvesting.
 
-We built this because sovereign infrastructure isn't just a luxury—it's a requirement. Whether you're powering a [Moltis](https://github.com/moltis-org/moltis) agent or building a private assistant, this bridge is your ticket to high-performance, cost-free voice synthesis.
+We built this because sovereign infrastructure isn't just a luxury—it's a requirement. Whether you're powering a [Agent](https://github.com/agent-org/agent) agent or building a private assistant, this bridge is your ticket to high-performance, cost-free voice synthesis.
 
 ### 💎 Key Advantages
 
 *   **⚡ Real-Time CPU Performance** — Optimized to run lightning-fast on standard CPUs. Get instant response times without the need for high-end GPUs.
 *   **💰 100% Free & Self-Hosted** — Zero costs. Zero subscriptions. Zero character limits. You own the compute, you own the voice.
 *   **👥 Custom Voice Cloning** — Seamlessly clone any voice with just seconds of audio. Your clones stay private, local, and under your control.
-*   **🤖 Moltis-Native** — Designed from the ground up to integrate perfectly into the Moltis ecosystem.
+*   **🤖 Agent-Native** — Designed from the ground up to integrate perfectly into the Agent ecosystem.
 *   **🐳 One-Click Deployment** — Fully Dockerized for a "it just works" experience on any server.
 *   **🎨 Admin UI** — A professional, dark-themed dashboard to manage, test, and export your custom voices.
 
@@ -41,6 +41,13 @@ We built this because sovereign infrastructure isn't just a luxury—it's a requ
 | **Setup** | API Key | Complex Config | **One-Click Docker** |
 
 ## 🛠 Installation
+
+### No Connection between Docker containers
+If your Agents cannot speak to the Pocket TTS Agent Bridge container, you may need to fix `host.docker.internal` resolution. Run this in your terminal:
+
+```bash
+docker exec <agent_container_name> sh -c "echo '192.168.0.1 host.docker.internal' >> /etc/hosts"
+```
 
 ### Deploy in 60 Seconds (Docker)
 The fastest path to sovereign voice:
@@ -106,22 +113,31 @@ When `ENABLE_AUTH=true` (default), all API requests must be authenticated. You c
     ?api_key=your_api_key_here
     ```
 
-## 🔌 Moltis Integration
+## 🔌 Agent Integration
 
-Integrating with your Moltis bot is effortless. Update your `config.toml` to point to your new bridge:
+Configuring an Agent from command prompt is best. code snippit below:
 
-```toml
-[voice.tts]
-enabled = true
-provider = "coqui"
+```bash
+# I want to use the below TTS provider, detailed on the GitHub...
+# https://github.com/virtuehearts/pockettts-agent-bridge
+# API key: pt_####################
+# voice id: mya-01
 
-[voice.tts.coqui]
-endpoint = "http://your-server-ip:8000"
+curl -X POST http://localhost:8000/v1/audio/speech \
+  -H "Authorization: Bearer your_api_key_here" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "input": "This is synthesized via the OpenAI-compatible endpoint.",
+    "voice": "mya-01",
+    "model": "tts-1",
+    "response_format": "mp3"
+  }' \
+  --output openai_speech.mp3
 ```
 
-### Using Custom Voices with Moltis
+### Using Custom Voices with Agent
 
-To use a specific cloned voice (e.g., `Mya-01`) with Moltis, you have two primary options:
+To use a specific cloned voice (e.g., `Mya-01`) with Agent, you have two primary options:
 
 1.  **Environment Variable (Global Default):**
     Set the `DEFAULT_VOICE` environment variable on the bridge container to the ID of your cloned voice.
@@ -130,8 +146,8 @@ To use a specific cloned voice (e.g., `Mya-01`) with Moltis, you have two primar
     ```
     *Note: Voice IDs are typically the lowercase, slugified version of the name.*
 
-2.  **Moltis Configuration:**
-    Ensure your Moltis setup is configured to request the specific voice ID. If Moltis supports passing a speaker ID to the Coqui provider, use the ID found in the Bridge Admin UI.
+2.  **Agent Configuration:**
+    Ensure your Agent setup is configured to request the specific voice ID. If Agent supports passing a speaker ID to the Coqui provider, use the ID found in the Bridge Admin UI.
 
 3.  **Default Output Format:**
     If your client requires MP3 by default, you can set:
@@ -140,6 +156,8 @@ To use a specific cloned voice (e.g., `Mya-01`) with Moltis, you have two primar
     ```
 
 ## 👥 Voice Management
+
+**Note: Voice Cloning requires a Hugging Face Token.** You can get a Token from your [Hugging Face account settings](https://huggingface.co/settings/tokens). Once enabled and configured in the Bridge Settings, you'll be able to download models and provide samples to clone any voice.
 
 ### Cloning via Admin UI
 1.  Log in to the Admin UI (`http://your-server-ip:8000`).

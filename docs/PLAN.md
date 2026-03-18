@@ -15,7 +15,7 @@ This plan reflects the current repository state and highlights what is still req
 - ✅ Coqui-style voice aliases are supported (`speaker-id`, `speaker_id`, `speaker`, `voice`).
 - ✅ `POST /v1/audio/speech` OpenAI-style endpoint is available.
 - ✅ `GET /health` and `GET /api/voices` are implemented.
-- ⚠️ Contract/compatibility tests against a Moltis-like client matrix are still limited.
+- ⚠️ Contract/compatibility tests against a Agent-like client matrix are still limited.
 
 ### TTS engine and cloning
 - ✅ `PocketTTSService` attempts real `pocket-tts` model loading and synthesis when dependencies are available.
@@ -60,7 +60,7 @@ Rationale:
 ### 3) Compatibility hardening
 1. Add table-driven contract tests for all Coqui alias permutations (JSON + multipart).
 2. Add stricter response/error schema consistency tests for `/api/tts` and `/v1/audio/speech`.
-3. Validate behavior against representative Moltis request patterns.
+3. Validate behavior against representative Agent request patterns.
 
 ### 4) Test coverage and developer ergonomics
 1. Add integration tests with temporary DB/data directories for clone → list → synth → delete lifecycle.
@@ -76,5 +76,5 @@ Rationale:
 - Real `pocket-tts` synthesis/cloning path works reliably in local and container runs.
 - Degraded fallback behavior is explicit, intentional, and observable.
 - Full voice lifecycle is available in the admin UI (create/list/preview/rename/delete).
-- API compatibility is proven by contract tests for Coqui/Moltis-style usage.
+- API compatibility is proven by contract tests for Coqui/Agent-style usage.
 - UI and API automated tests pass in CI.
