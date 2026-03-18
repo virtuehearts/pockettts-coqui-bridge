@@ -1,6 +1,7 @@
 <div align="center">
-  <img src="https://raw.githubusercontent.com/agent-org/agent/main/website/favicon.svg" width="100" height="100" alt="PocketTTS Coqui Bridge">
-  <h1>PocketTTS Coqui Bridge</h1>
+  <img src="https://raw.githubusercontent.com/agent-org/agent/main/website/favicon.svg" width="100" height="100" alt="PocketTTS Agent Bridge">
+  <h1>PocketTTS Agent Bridge</h1>
+  <p>This is a project by <strong>darknet.ca labs / Virtuehearts on X</strong>. We look forward to helping in other projects that help the consciousness of agents.</p>
   <p><strong>The Sovereign Voice Layer for Agent</strong></p>
   <p><em>Real-time TTS. Zero Latency. 100% Local.</em></p>
 
@@ -17,7 +18,7 @@
 
 ## 🚀 Stop Paying for Your Own Voice
 
-**PocketTTS Coqui Bridge** is a game-changing, production-grade bridge that brings elite-level Text-to-Speech directly to your hardware. No expensive GPUs, no predatory API fees, and absolutely no data harvesting.
+**PocketTTS Agent Bridge** is a game-changing, production-grade bridge that brings elite-level Text-to-Speech directly to your hardware. No expensive GPUs, no predatory API fees, and absolutely no data harvesting.
 
 We built this because sovereign infrastructure isn't just a luxury—it's a requirement. Whether you're powering a [Agent](https://github.com/agent-org/agent) agent or building a private assistant, this bridge is your ticket to high-performance, cost-free voice synthesis.
 
@@ -61,7 +62,7 @@ docker run -d \
   -e SESSION_SECRET=$(openssl rand -hex 32) \
   -v $(pwd)/data:/app/data \
   --restart always \
-  ghcr.io/virtuehearts/pockettts-coqui-bridge:latest
+  ghcr.io/virtuehearts/pockettts-agent-bridge:latest
 ```
 
 ### Tutorial: Build & Deploy from Source
@@ -69,8 +70,8 @@ If you want to build the image yourself from the source code:
 
 1. **Clone the repository:**
    ```bash
-   git clone https://github.com/virtuehearts/pockettts-coqui-bridge.git
-   cd pockettts-coqui-bridge
+   git clone https://github.com/virtuehearts/pockettts-agent-bridge.git
+   cd pockettts-agent-bridge
    ```
 
 2. **Build the Docker image:**
@@ -115,6 +116,8 @@ When `ENABLE_AUTH=true` (default), all API requests must be authenticated. You c
 
 ## 🔌 Agent Integration
 
+![Agent Configuration](https://darknet.ca/config_skill_agent.jpg)
+
 Configuring an Agent from command prompt is best. code snippit below:
 
 ```bash
@@ -155,6 +158,8 @@ To use a specific cloned voice (e.g., `Mya-01`) with Agent, you have two primary
     -e DEFAULT_OUTPUT_FORMAT=mp3
     ```
 
+![Key Configuration](https://darknet.ca/key_config.jpg)
+
 ## 👥 Voice Management
 
 **Note: Voice Cloning requires a Hugging Face Token.** You can get a Token from your [Hugging Face account settings](https://huggingface.co/settings/tokens). Once enabled and configured in the Bridge Settings, you'll be able to download models and provide samples to clone any voice.
@@ -179,7 +184,7 @@ curl -X POST http://localhost:8000/api/voices/clone \
 
 ## 🛠 API Reference
 
-PocketTTS Coqui Bridge provides two primary interfaces: a Coqui-compatible API and an OpenAI-compatible Speech API.
+PocketTTS Agent Bridge provides two primary interfaces: a Coqui-compatible API and an OpenAI-compatible Speech API.
 
 ### 1. Coqui-Compatible TTS (`/api/tts`)
 
