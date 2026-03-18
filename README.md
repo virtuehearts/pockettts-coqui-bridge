@@ -140,17 +140,36 @@ curl -X POST http://localhost:8000/v1/audio/speech \
 
 ### Using Custom Voices with Agent
 
-To use a specific cloned voice (e.g., `Mya-01`) with Agent, you have two primary options:
+To use a specific cloned voice (e.g., `Mya-01`) with Agent, you have three primary options:
 
 1.  **Environment Variable (Global Default):**
     Set the `DEFAULT_VOICE` environment variable on the bridge container to the ID of your cloned voice.
     ```bash
     -e DEFAULT_VOICE=mya-01
     ```
-    *Note: Voice IDs are typically the lowercase, slugified version of the name.*
+    *Note: Voice IDs are the lowercase, slugified version of the name.*
 
-2.  **Agent Configuration:**
-    Ensure your Agent setup is configured to request the specific voice ID. If Agent supports passing a speaker ID to the Coqui provider, use the ID found in the Bridge Admin UI.
+2.  **OpenAI-Compatible Configuration (Recommended for Agents):**
+    Most modern agents support the OpenAI TTS schema. Point your agent to the bridge's V1 endpoint:
+    - **Base URL:** `http://your-server-ip:8000/v1`
+    - **Voice:** Use the exact Voice ID from the Admin UI (e.g., `mya-01`). The bridge now supports case-insensitive lookups, but lowercase is preferred.
+    - **API Key:** Use any valid API Key generated in the Settings tab.
+
+    **Schema Example for Agent Config:**
+    ```json
+    {
+      "tts_provider": "openai",
+      "tts_config": {
+        "api_key": "pt_your_key_here",
+        "base_url": "http://host.docker.internal:8000/v1",
+        "voice": "mya-01",
+        "model": "tts-1"
+      }
+    }
+    ```
+
+3.  **Agent-Specific Configuration:**
+    Ensure your Agent setup is configured to request the specific voice ID. If your agent uses the older Coqui-style parameters, it will send `speaker_id` or `voice`. The bridge handles these aliases automatically.
 
 3.  **Default Output Format:**
     If your client requires MP3 by default, you can set:

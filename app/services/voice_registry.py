@@ -41,10 +41,11 @@ class VoiceRegistry:
         return result
 
     def get(self, voice_id: str) -> dict | None:
+        voice_id = voice_id.lower()
         if voice_id in {v["id"] for v in BUILTIN_VOICES}:
             return next(v for v in BUILTIN_VOICES if v["id"] == voice_id)
         with connect(self.db_path) as conn:
-            row = conn.execute("SELECT * FROM voices WHERE id = ?", (voice_id,)).fetchone()
+            row = conn.execute("SELECT * FROM voices WHERE id = ?", (voice_id.lower(),)).fetchone()
         if not row:
             return None
         return {
@@ -68,6 +69,7 @@ class VoiceRegistry:
         return self.get(voice_id)
 
     def update(self, voice_id: str, *, name: str | None = None, metadata: dict | None = None) -> dict:
+        voice_id = voice_id.lower()
         current = self.get(voice_id)
         if not current or current.get("type") != "cloned":
             raise ValueError("Only cloned voices can be updated")
@@ -79,6 +81,7 @@ class VoiceRegistry:
         return self.get(voice_id)
 
     def delete(self, voice_id: str) -> dict:
+        voice_id = voice_id.lower()
         current = self.get(voice_id)
         if not current or current.get("type") != "cloned":
             raise ValueError("Only cloned voices can be deleted")

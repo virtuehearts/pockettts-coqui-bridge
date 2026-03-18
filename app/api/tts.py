@@ -47,6 +47,8 @@ async def tts(request: Request):
         raise HTTPException(status_code=400, detail='text is required')
 
     voice = _pick(params, 'speaker-id', 'speaker_id', 'voice', 'speaker', default=settings.default_voice)
+    if voice:
+        voice = voice.lower()
     fmt = _pick(params, 'format', default=settings.default_output_format).lower()
     save_voice = str(_pick(params, 'save_voice', default='false')).lower() in {'1', 'true', 'yes'}
     clone_name = _pick(params, 'clone_name', default='cloned-voice')
@@ -119,13 +121,22 @@ async def openai_speech(request: Request):
         if not api_key_data and not auth_service.ui_authenticated(request):
             raise HTTPException(status_code=401, detail='Invalid API Key')
 
-    payload = await request.json()
-    text = _pick(payload, 'input', 'text')
+    params = {}
+    ctype = request.headers.get('content-type', '')
+    if 'application/json' in ctype:
+        params = await request.json()
+    else:
+        form = await request.form()
+        params = dict(form)
+
+    text = _pick(params, 'input', 'text')
     if not text:
         raise HTTPException(status_code=400, detail='input is required')
 
-    voice = _pick(payload, 'voice', 'speaker-id', 'speaker_id', 'speaker', default=request.app.state.settings.default_voice)
-    fmt = _pick(payload, 'response_format', 'format', default=request.app.state.settings.default_output_format).lower()
+    voice = _pick(params, 'voice', 'speaker-id', 'speaker_id', 'speaker', default=request.app.state.settings.default_voice)
+    if voice:
+        voice = voice.lower()
+    fmt = _pick(params, 'response_format', 'format', default=request.app.state.settings.default_output_format).lower()
 
     if not request.app.state.voice_registry.get(voice):
         raise HTTPException(status_code=404, detail='voice not found')
@@ -163,6 +174,8 @@ async def preview(request: Request):
     payload = await request.json()
     text = payload.get('text', '').strip()
     voice = payload.get('voice', request.app.state.settings.default_voice)
+    if voice:
+        voice = voice.lower()
     if not text:
         raise HTTPException(status_code=400, detail='text is required')
     out = request.app.state.settings.output_dir / timestamped_output('preview', '.wav')
