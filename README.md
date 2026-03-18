@@ -116,7 +116,7 @@ When `ENABLE_AUTH=true` (default), all API requests must be authenticated. You c
 
 ## 🔌 Agent Integration
 
-![Agent Configuration](https://darknet.ca/config_skill_agent.jpg)
+![Agent Configuration](https://darknet.ca/config_skill_agent2.jpg)
 
 Configuring an Agent from command prompt is best. code snippit below:
 
