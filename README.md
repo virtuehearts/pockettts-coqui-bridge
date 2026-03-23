@@ -171,11 +171,21 @@ To use a specific cloned voice (e.g., `Mya-01`) with Agent, you have three prima
 3.  **Agent-Specific Configuration:**
     Ensure your Agent setup is configured to request the specific voice ID. If your agent uses the older Coqui-style parameters, it will send `speaker_id` or `voice`. The bridge handles these aliases automatically.
 
-3.  **Default Output Format:**
+4.  **Default Output Format:**
     If your client requires MP3 by default, you can set:
     ```bash
     -e DEFAULT_OUTPUT_FORMAT=mp3
     ```
+
+### 🛠 Troubleshooting Agent Issues
+
+If your Agent is not speaking or responding, it is usually due to an **API authentication issue**. This setup is the easiest custom voice TTS agent that will run on edge hardware and local CPU, but it requires a valid API key to be configured in your Agent's settings.
+
+![API Issue Example 1](https://github.com/virtuehearts/pockettts-agent-bridge/blob/main/screenshots/api_issue-01.jpg?raw=true)
+
+Ensure you have created an API key in the **Settings** tab of the Admin UI and that it is correctly entered in your Agent's configuration.
+
+![API Key Management](https://github.com/virtuehearts/pockettts-agent-bridge/blob/main/screenshots/api_issue-02.jpg?raw=true)
 
 ![Key Configuration](https://darknet.ca/key_config.jpg)
 
